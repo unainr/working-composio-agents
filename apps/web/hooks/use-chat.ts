@@ -7,7 +7,6 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 export type ChatSummary = {
 	id: string;
-	title: string | null;
 	updatedAt: string;
 	createdAt: string;
 };
