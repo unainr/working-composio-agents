@@ -119,31 +119,4 @@ export function useDisconnectToolkit() {
  *     setAssistantMessage(prev => prev + chunk);
  *   }
  */
-export async function* streamChat(messages: Message[]): AsyncGenerator<string> {
-	const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/chat`, {
-		method: "POST",
-		credentials: "include",
-		headers: { "Content-Type": "application/json" },
-		body: JSON.stringify({ messages }),
-	});
 
-	if (!res.ok) throw new Error(`Chat request failed: ${res.status}`);
-	if (!res.body) throw new Error("No response body");
-
-	const reader = res.body.getReader();
-	const decoder = new TextDecoder();
-
-	while (true) {
-		const { done, value } = await reader.read();
-		if (done) break;
-
-		const raw = decoder.decode(value, { stream: true });
-
-		// SSE format: "data: <chunk>\n\n"
-		for (const line of raw.split("\n")) {
-			if (line.startsWith("data: ")) {
-				yield line.slice(6);
-			}
-		}
-	}
-}

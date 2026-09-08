@@ -11,7 +11,7 @@ const ALLOWED_TOOLKITS = [
 	"slack",
 	"notion",
 	"github",
-	"googlecalendar",
+	"googledocs",
 	"instagram",
 ];
 
