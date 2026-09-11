@@ -6,6 +6,7 @@ import chat from "./routes/chat";
 import toolkits from "./routes/toolkits";
 import connect from "./routes/connect";
 import disconnect from "./routes/disconnect";
+import agents from "./routes/agents";
 
 const app = new Hono<{ Bindings: CloudflareBindings }>()
 	.basePath("/api")
@@ -25,7 +26,8 @@ const app = new Hono<{ Bindings: CloudflareBindings }>()
 	.route("/chat", chat)
 	.route("/toolkits", toolkits)
 	.route("/connect", connect)
-	.route("/disconnect", disconnect);
+	.route("/disconnect", disconnect)
+	.route("/agents",agents)
 
 export default app;
 export type AppType = typeof app;
