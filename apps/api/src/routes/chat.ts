@@ -15,6 +15,7 @@ import { SYSTEM_PROMPT } from "../lib/utils";
 
 type ChatRequest = {
     chatId?: string;
+    agentId?: string;
 	messages?: UIMessage[];
   
 };
@@ -29,7 +30,7 @@ const app = new Hono<{ Bindings: CloudflareBindings }>()
   const userId = c.get("userId");
   const body = await c.req.json<ChatRequest>();
   const uiMessages = body.messages ?? [];
-
+const agentId = body.agentId; // add this
   let session;
   try {
     session = await getOrCreateSession(userId, c.env);
@@ -41,7 +42,7 @@ const app = new Hono<{ Bindings: CloudflareBindings }>()
    // Resolve or create the chat row
     let chatId = body.chatId;
     if (!chatId) {
-      const [newChat] = await db.insert(chats).values({ userId }).returning({ id: chats.id });
+      const [newChat] = await db.insert(chats).values({ userId, agentId }).returning({ id: chats.id });
       chatId = newChat.id;
     }
 
@@ -77,13 +78,14 @@ const app = new Hono<{ Bindings: CloudflareBindings }>()
 
 
   // List all chats for the current user, most recent first
-  .get("/", async (c) => {
+  .get("/", requireUser,async (c) => {
     const userId = c.get("userId");
     const db = getDb(c.env);
 
     const userChats = await db
       .select({
         id: chats.id,
+         agentId: chats.agentId, // add this
         updatedAt: chats.updatedAt,
         createdAt: chats.createdAt,
       })
