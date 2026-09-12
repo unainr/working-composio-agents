@@ -7,6 +7,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 export type ChatSummary = {
 	id: string;
+	agentId?: string | null;
 	updatedAt: string;
 	createdAt: string;
 };
@@ -26,7 +27,7 @@ export type ChatMessage = {
 
 export const chatKeys = {
 	all: ["chats"] as const,
-	list: () => [...chatKeys.all, "list"] as const,
+	list: (agentId?: string) => [...chatKeys.all, "list", agentId ?? "all"] as const,
 	messages: (chatId: string) => [...chatKeys.all, "messages", chatId] as const,
 };
 
@@ -35,14 +36,14 @@ export const chatKeys = {
 /**
  * Fetches all conversations for the current user, most recently updated first.
  */
-export function useChats() {
+export function useChats(agentId?: string) {
 	return useQuery({
-		queryKey: chatKeys.list(),
+		queryKey: chatKeys.list(agentId),
 		queryFn: async (): Promise<{ chats: ChatSummary[] }> => {
-			const res = await client.api.chat.$get();
-
+			const res = await client.api.chat.$get({
+				query: agentId ? { agentId } : {},
+			});
 			if (!res.ok) throw new Error("Failed to fetch chats");
-
 			return res.json();
 		},
 	});
@@ -89,7 +90,9 @@ export function useDeleteChat() {
 			return res.json();
 		},
 		onSuccess: (_data, chatId) => {
-			queryClient.invalidateQueries({ queryKey: chatKeys.list() });
+			// invalidates every list variant (agent-scoped and "all"), since
+			// chatKeys.all is a prefix of every list key
+			queryClient.invalidateQueries({ queryKey: chatKeys.all });
 			queryClient.removeQueries({ queryKey: chatKeys.messages(chatId) });
 		},
 	});
@@ -103,5 +106,6 @@ export function useDeleteChat() {
  */
 export function useInvalidateChats() {
 	const queryClient = useQueryClient();
-	return () => queryClient.invalidateQueries({ queryKey: chatKeys.list() });
+	return (agentId?: string) =>
+		queryClient.invalidateQueries({ queryKey: chatKeys.list(agentId) });
 }

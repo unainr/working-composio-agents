@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 import {
   Card,
   CardHeader,
@@ -9,9 +8,10 @@ import {
   CardContent,
 } from "@/components/ui/card";
 import { Bot, Sparkles } from "lucide-react";
-import { AgentChatSheet } from "./AgentChatSheet";
+
 import { useAgentsGet } from "../hooks/use-agents-hook";
 import { cn } from "@/lib/utils";
+import { AgentChatWidget } from "./AgentChatSheet";
 
 export function AgentList() {
   const { data: agents, isLoading, isError } = useAgentsGet();
@@ -73,8 +73,13 @@ function AgentCard({ agent }: { agent: any }) {
         </div>
       </CardHeader>
 
-      <CardContent className="mt-auto pt-2 relative">
-        <AgentChatSheet agentId={agent.id} agentName={agent.name} />
+      <CardContent className="mt-auto pt-2 relative flex items-center justify-between">
+        <span className="text-xs text-muted-foreground">Tap to chat</span>
+        <AgentChatWidget
+          agentId={agent.id}
+          agentName={agent.name}
+          agentAvatarUrl={agent.avatarUrl}
+        />
       </CardContent>
     </Card>
   );
@@ -93,8 +98,9 @@ function AgentAvatar({
         <img
           src={avatarUrl}
           alt={name}
-        
-          className="object-cover"
+          width={44}
+          height={44}
+          className="h-full w-full object-cover"
         />
       </div>
     );
