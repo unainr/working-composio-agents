@@ -11,21 +11,38 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Send, ExternalLink } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Spinner } from "./ui/spinner";
+import type { UIMessage } from "ai";
 
 interface ChatWindowProps {
 	agentId: string;
+	chatId?: string | null;
+	initialMessages?: UIMessage[];
+	onChatCreated?: (chatId: string) => void;
 }
 
-export function ChatWindow({ agentId }: ChatWindowProps) {
+export function ChatWindow({
+	agentId,
+	chatId,
+	initialMessages,
+	onChatCreated,
+}: ChatWindowProps) {
 	const bottomRef = useRef<HTMLDivElement>(null);
 	const inputRef = useRef<HTMLTextAreaElement>(null);
 
 	const { messages, sendMessage, status, error } = useChat({
+		id: chatId ?? undefined,
+		messages: initialMessages,
 		transport: new DefaultChatTransport({
 			api: `${process.env.NEXT_PUBLIC_API_URL}/api/chat`,
 			credentials: "include",
-			body: {
-				agentId, // sent with every request, backend uses it to scope/create the chat
+			body: { agentId, chatId },
+			fetch: async (input, init) => {
+				const response = await fetch(input, init);
+				const newChatId = response.headers.get("X-Chat-Id");
+				if (newChatId && newChatId !== chatId) {
+					onChatCreated?.(newChatId);
+				}
+				return response;
 			},
 		}),
 	});
@@ -61,8 +78,10 @@ export function ChatWindow({ agentId }: ChatWindowProps) {
 	}
 
 	return (
-		<div className="flex flex-col h-full">
-			<ScrollArea className="flex-1 px-4 py-6">
+		// min-h-0 here lets this container shrink inside its parent flex column
+		// instead of growing to fit content — required for the ScrollArea below to work
+		<div className="flex flex-col h-full min-h-0">
+			<ScrollArea className="flex-1 min-h-0 px-4 py-6">
 				<div className="space-y-4">
 					{messages.length === 0 && !isThinking && <EmptyState />}
 
@@ -103,7 +122,7 @@ export function ChatWindow({ agentId }: ChatWindowProps) {
 				</div>
 			</ScrollArea>
 
-			<div className="border-t px-4 py-3">
+			<div className="border-t px-4 py-3 shrink-0">
 				<div className="flex items-end gap-2">
 					<Textarea
 						ref={inputRef}
