@@ -5,11 +5,12 @@ import { google } from "@ai-sdk/google";
 import { convertToModelMessages, stepCountIs, streamText, UIMessage } from "ai";
 import { getOrCreateSession } from "../lib/session";
 import type { CloudflareBindings } from "../types";
-import { chatMessages, chats } from "../db/schema";
+import { agents, chatMessages, chats } from "../db/schema";
 import { getDb } from "../db";
 import { eq, desc, and } from "drizzle-orm";
-import { CREDITS_PER_CONVERSATION, SYSTEM_PROMPT } from "../lib/utils";
-import { deductCredits } from "../lib/billing";
+import { buildSystemPrompt, calculateCreditsForUsage, CREDIT_CONVERSION } from "../lib/utils";
+
+import { deductCreditsClamped, hasMinimumCredits } from "../lib/billing";
 
 type ChatRequest = {
 	chatId?: string;
@@ -27,6 +28,7 @@ const app = new Hono<{ Bindings: CloudflareBindings }>()
 		const uiMessages = body.messages ?? [];
 		const agentId = body.agentId;
 		const isNewChat = !body.chatId;
+
 		let session;
 		try {
 			session = await getOrCreateSession(userId, c.env);
@@ -37,23 +39,28 @@ const app = new Hono<{ Bindings: CloudflareBindings }>()
 				503,
 			);
 		}
-		// Charge credits only for starting a NEW conversation — replying within
-		// an existing chat is free under this model. Checked/deducted before the
-		// chat row is created so a failed charge never leaves an orphaned chat.
+
+		// Only new conversations are ever charged. We can't know the real cost
+		// until the reply is generated, so this is just a sanity check that the
+		// user has at least the minimum possible charge available — the real
+		// amount is calculated from actual token usage in onFinish below.
 		if (isNewChat) {
-			const charge = await deductCredits(c, userId, CREDITS_PER_CONVERSATION);
-			if (!charge.ok) {
+			const canAfford = await hasMinimumCredits(
+				c,
+				userId,
+				CREDIT_CONVERSION.minCreditsPerConversation,
+			);
+			if (!canAfford) {
 				return c.json(
 					{
 						error: "insufficient_credits",
-						credits: charge.credits,
-						required: CREDITS_PER_CONVERSATION,
+						required: CREDIT_CONVERSION.minCreditsPerConversation,
 					},
 					402,
 				);
 			}
 		}
-		// Resolve or create the chat row
+
 		let chatId = body.chatId;
 		if (!chatId) {
 			const [newChat] = await db
@@ -63,7 +70,6 @@ const app = new Hono<{ Bindings: CloudflareBindings }>()
 			chatId = newChat.id;
 		}
 
-		// Persist the latest user message (last item in uiMessages is the new one)
 		const latestUserMessage = uiMessages.at(-1);
 		if (latestUserMessage?.role === "user") {
 			await db.insert(chatMessages).values({
@@ -73,18 +79,29 @@ const app = new Hono<{ Bindings: CloudflareBindings }>()
 			});
 		}
 
+		let agentContext = { name: "AI Agent", description: null as string | null };
+		if (agentId) {
+			const [agent] = await db
+				.select({ name: agents.name, description: agents.description })
+				.from(agents)
+				.where(eq(agents.id, agentId));
+			if (agent) agentContext = agent;
+		}
+
 		const tools = await session.tools();
 
 		const result = streamText({
 			model: google("gemini-2.5-flash"),
-			system: SYSTEM_PROMPT,
+			system: buildSystemPrompt(agentContext),
 			tools,
 			messages: await convertToModelMessages(uiMessages),
 			stopWhen: stepCountIs(15),
 			onError: (error) => {
 				console.error("[chat] streamText error:", error);
+				// Nothing to refund — credits are only deducted below in onFinish,
+				// which never runs if the stream errors out completely.
 			},
-			onFinish: async ({ response }) => {
+			onFinish: async ({ response, usage }) => {
 				try {
 					const assistantMessages = response.messages.filter(
 						(m) => m.role === "assistant",
@@ -108,13 +125,17 @@ const app = new Hono<{ Bindings: CloudflareBindings }>()
 						});
 					}
 
-					// keep updatedAt current so the History list sorts by real activity
 					await db
 						.update(chats)
 						.set({ updatedAt: new Date() })
 						.where(eq(chats.id, chatId));
+
+					if (isNewChat) {
+						const creditsToCharge = calculateCreditsForUsage(usage);
+						await deductCreditsClamped(c, userId, creditsToCharge);
+					}
 				} catch (err) {
-					console.error("[chat] failed to persist assistant message:", err);
+					console.error("[chat] failed to persist assistant message or deduct credits:", err);
 				}
 			},
 		});
@@ -124,7 +145,6 @@ const app = new Hono<{ Bindings: CloudflareBindings }>()
 		});
 	})
 
-	// List all chats for the current user, most recent first — optionally scoped to one agent
 	.get("/", requireUser, async (c) => {
 		const userId = c.get("userId");
 		const agentId = c.req.query("agentId");
@@ -147,7 +167,6 @@ const app = new Hono<{ Bindings: CloudflareBindings }>()
 		return c.json({ chats: userChats });
 	})
 
-	// Fetch full message history for one chat
 	.get("/:chatId/messages", async (c) => {
 		const userId = c.get("userId");
 		const chatId = c.req.param("chatId");
@@ -173,7 +192,6 @@ const app = new Hono<{ Bindings: CloudflareBindings }>()
 		return c.json({ chatId, messages: uiMessages });
 	})
 
-	// Optional: delete a chat
 	.delete("/:chatId", async (c) => {
 		const userId = c.get("userId");
 		const chatId = c.req.param("chatId");

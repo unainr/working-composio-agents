@@ -69,6 +69,33 @@ const limit = await canCreateAgent(c, userId);
 			}
 			return c.json(agent);
 		},
+	)
+
+			// DELETE /:id — delete agents
+	.delete(
+		"/:id",
+		zValidator("param", z.object({ id: z.string() })),
+		requireUser,
+		async (c) => {
+			const ownerId = c.get("userId");
+			const { id } = c.req.valid("param");
+			const db = getDb(c.env);
+
+			const [existing] = await db
+				.select()
+				.from(agents)
+				.where(and(eq(agents.id, id), eq(agents.userId, ownerId)));
+
+			if (!existing) {
+				return c.json({ error: "Salon not found" }, 404);
+			}
+
+			await db
+				.delete(agents)
+				.where(and(eq(agents.id, id), eq(agents.userId, ownerId)));
+
+			return c.json({ success: true });
+		},
 	);
 
 export default app;

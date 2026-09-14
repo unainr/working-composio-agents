@@ -27,6 +27,5 @@ export function useBilling() {
       return (await res.json()) as BillingInfo;
     },
 
-    staleTime: 30_000,
-  });
+    });
 }

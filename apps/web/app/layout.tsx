@@ -7,6 +7,7 @@ import QueryProviders from "@/providers/query-provider";
 import { ThemeProvider } from "@/components/theme-provider";
 import { Toaster } from "@/components/ui/sonner";
 import { HonoAuthBridge } from "@/components/hono-auth-bridge";
+import { TooltipProvider } from "@/components/ui/tooltip";
 
 const manropeHeading = Manrope({
 	subsets: ["latin"],
@@ -49,8 +50,10 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
 					<QueryProviders>
 						<ThemeProvider>
 							<HonoAuthBridge />
+							<TooltipProvider>
 
 							{children}
+							</TooltipProvider>
 							<Toaster />
 						</ThemeProvider>
 					</QueryProviders>

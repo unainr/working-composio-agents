@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { InferRequestType, InferResponseType } from "hono/client";
 import { client } from "@/lib/hono";
+import { billingKey } from "@/hooks/use-billing";
 
 type ResponseType = InferResponseType<typeof client.api.agents.$post, 201>;
 type RequestType = InferRequestType<typeof client.api.agents.$post>["json"];
@@ -20,6 +21,10 @@ export const useCreateAgents = () => {
 
 		onSuccess: () => {
 			queryClient.invalidateQueries({ queryKey: ["agents"] });
+			 // Refresh billing/navbar
+      queryClient.invalidateQueries({
+        queryKey: billingKey,
+      });
 		},
 	});
 };
