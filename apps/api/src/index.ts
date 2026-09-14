@@ -7,6 +7,7 @@ import toolkits from "./routes/toolkits";
 import connect from "./routes/connect";
 import disconnect from "./routes/disconnect";
 import agents from "./routes/agents";
+import billing from "./routes/billing";
 
 const app = new Hono<{ Bindings: CloudflareBindings }>()
 	.basePath("/api")
@@ -28,6 +29,7 @@ const app = new Hono<{ Bindings: CloudflareBindings }>()
 	.route("/connect", connect)
 	.route("/disconnect", disconnect)
 	.route("/agents",agents)
+	.route("/billing", billing)
 
 export default app;
 export type AppType = typeof app;

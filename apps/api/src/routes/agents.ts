@@ -7,6 +7,7 @@ import { getDb } from "../db";
 import { zValidator } from "@hono/zod-validator";
 import z from "zod";
 import { and, eq } from "drizzle-orm";
+import { canCreateAgent } from "../lib/billing";
 
 const agentSchame = z.object({
 	name: z.string().min(2).max(100),
@@ -21,7 +22,13 @@ const app = new Hono<{ Bindings: CloudflareBindings }>()
 		const db = getDb(c.env);
 		const userId = c.get("userId");
 		const { name, description, avatarUrl } = c.req.valid("json");
-
+const limit = await canCreateAgent(c, userId);
+  if (!limit.allowed) {
+    return c.json(
+      { error: "agent_limit_reached", current: limit.current, max: limit.max, plan: limit.plan },
+      403
+    );
+  }
 		// Create a new agent
 		const [newAgent] = await db
 			.insert(agents)

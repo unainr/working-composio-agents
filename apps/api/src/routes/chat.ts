@@ -8,7 +8,8 @@ import type { CloudflareBindings } from "../types";
 import { chatMessages, chats } from "../db/schema";
 import { getDb } from "../db";
 import { eq, desc, and } from "drizzle-orm";
-import { SYSTEM_PROMPT } from "../lib/utils";
+import { CREDITS_PER_CONVERSATION, SYSTEM_PROMPT } from "../lib/utils";
+import { deductCredits } from "../lib/billing";
 
 type ChatRequest = {
 	chatId?: string;
@@ -25,7 +26,7 @@ const app = new Hono<{ Bindings: CloudflareBindings }>()
 		const body = await c.req.json<ChatRequest>();
 		const uiMessages = body.messages ?? [];
 		const agentId = body.agentId;
-
+		const isNewChat = !body.chatId;
 		let session;
 		try {
 			session = await getOrCreateSession(userId, c.env);
@@ -36,7 +37,22 @@ const app = new Hono<{ Bindings: CloudflareBindings }>()
 				503,
 			);
 		}
-
+		// Charge credits only for starting a NEW conversation — replying within
+		// an existing chat is free under this model. Checked/deducted before the
+		// chat row is created so a failed charge never leaves an orphaned chat.
+		if (isNewChat) {
+			const charge = await deductCredits(c, userId, CREDITS_PER_CONVERSATION);
+			if (!charge.ok) {
+				return c.json(
+					{
+						error: "insufficient_credits",
+						credits: charge.credits,
+						required: CREDITS_PER_CONVERSATION,
+					},
+					402,
+				);
+			}
+		}
 		// Resolve or create the chat row
 		let chatId = body.chatId;
 		if (!chatId) {

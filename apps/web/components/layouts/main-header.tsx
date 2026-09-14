@@ -9,6 +9,7 @@ import { SignInButtonClerk } from "../clerk-sign-button/Sign-in-button";
 import { ThemeSwitcher } from "../theme/mode-toggle";
 import { MenuIcon, XIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { CreditsDisplay } from "../agents/components/credits-display";
 
 
 const menuItems = [
@@ -61,7 +62,7 @@ export function MainHeader() {
 					{/* RIGHT — theme + separator + cta + mobile toggle */}
 					<div className="flex items-center gap-2">
 						<ThemeSwitcher />
-
+<CreditsDisplay/>
 						{/* Separator */}
 						<div className="hidden h-5 w-px bg-white/10 lg:block" />
 
