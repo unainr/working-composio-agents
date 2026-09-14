@@ -36,7 +36,6 @@ export function AgentChatWidget({
 	const [tab, setTab] = useState("chat");
 	const [showUpgrade, setShowUpgrade] = useState(false);
 	const queryClient = useQueryClient();
-	// isLoading is only true while a chatId is set AND the fetch hasn't resolved yet
 	const { data: history, isLoading: historyLoading } =
 		useChatMessages(activeChatId);
 	const invalidateChats = useInvalidateChats();
@@ -46,8 +45,6 @@ export function AgentChatWidget({
 		setTab("chat");
 	}
 
-	// For a brand-new chat (activeChatId null) there's nothing to wait for.
-	// For a resumed chat, wait until history has actually loaded before mounting ChatWindow.
 	const readyToRenderChat = !activeChatId || (!historyLoading && !!history);
 
 	return (
@@ -60,16 +57,12 @@ export function AgentChatWidget({
 					setTab("chat");
 				}
 			}}>
+			{/* Solid icon button — distinct from the agent's own avatar shown in the card header */}
 			<PopoverTrigger asChild>
 				<button
-					className="h-10 w-10 rounded-full overflow-hidden ring-1 ring-border hover:ring-primary/50 transition-all shrink-0"
+					className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-sm ring-1 ring-primary/20 transition-transform hover:scale-105 active:scale-95"
 					aria-label={`Chat with ${agentName}`}>
-					<Avatar className="h-full w-full">
-						<AvatarImage src={agentAvatarUrl ?? undefined} alt={agentName} />
-						<AvatarFallback className="text-xs">
-							{agentName.slice(0, 2).toUpperCase()}
-						</AvatarFallback>
-					</Avatar>
+					<MessageCircle className="h-4 w-4" />
 				</button>
 			</PopoverTrigger>
 
@@ -79,7 +72,7 @@ export function AgentChatWidget({
 				sideOffset={10}
 				className="w-[min(380px,calc(100vw-2.5rem))] h-[min(560px,calc(100vh-8rem))] p-0 flex flex-col gap-0 overflow-hidden rounded-2xl z-50">
 				<div className="flex items-center gap-2.5 border-b px-4 py-3 shrink-0">
-					<Avatar className="h-8 w-8">
+					<Avatar className="h-8 w-8 ring-2 ring-border/60 ring-offset-1 ring-offset-background">
 						<AvatarImage src={agentAvatarUrl ?? undefined} alt={agentName} />
 						<AvatarFallback className="text-xs">
 							{agentName.slice(0, 2).toUpperCase()}
@@ -135,12 +128,13 @@ export function AgentChatWidget({
 									onChatCreated={(id) => {
 										setActiveChatId(id);
 										invalidateChats(agentId);
-										queryClient.invalidateQueries({ queryKey: billingKey }); // refresh credit balance
+									}}
+									onConversationFinished={() => {
+										queryClient.invalidateQueries({ queryKey: billingKey });
 									}}
 									onInsufficientCredits={() => setShowUpgrade(true)}
 								/>
 							) : (
-								// Shown briefly while history loads for a resumed chat
 								<div className="flex h-full items-center justify-center">
 									<Spinner />
 								</div>

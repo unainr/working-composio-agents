@@ -18,7 +18,8 @@ interface ChatWindowProps {
 	chatId?: string | null;
 	initialMessages?: UIMessage[];
 	onChatCreated?: (chatId: string) => void;
-	  onInsufficientCredits?: () => void;
+	onInsufficientCredits?: () => void;
+	onConversationFinished?: () => void;
 }
 
 export function ChatWindow({
@@ -26,7 +27,8 @@ export function ChatWindow({
 	chatId,
 	initialMessages,
 	onChatCreated,
-	onInsufficientCredits
+	onInsufficientCredits,
+	onConversationFinished,
 }: ChatWindowProps) {
 	const bottomRef = useRef<HTMLDivElement>(null);
 	const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -35,16 +37,14 @@ export function ChatWindow({
 		id: chatId ?? undefined,
 		messages: initialMessages,
 		transport: new DefaultChatTransport({
-			
 			api: `${process.env.NEXT_PUBLIC_API_URL}/api/chat`,
 			credentials: "include",
 			body: { agentId, chatId },
 			fetch: async (input, init) => {
-				
 				const response = await fetch(input, init);
-				 if (response.status === 402) {
-    onInsufficientCredits?.();
-  }
+				if (response.status === 402) {
+					onInsufficientCredits?.();
+				}
 				const newChatId = response.headers.get("X-Chat-Id");
 				if (newChatId && newChatId !== chatId) {
 					onChatCreated?.(newChatId);
@@ -52,6 +52,12 @@ export function ChatWindow({
 				return response;
 			},
 		}),
+		onFinish: () => {
+			// Fires once the assistant's reply has fully streamed in — by this
+			// point the backend's own onFinish has already run and written the
+			// real credit deduction, so it's safe to refetch billing here.
+			onConversationFinished?.();
+		},
 	});
 
 	const isStreaming = status === "submitted" || status === "streaming";
@@ -85,8 +91,6 @@ export function ChatWindow({
 	}
 
 	return (
-		// min-h-0 here lets this container shrink inside its parent flex column
-		// instead of growing to fit content — required for the ScrollArea below to work
 		<div className="flex flex-col h-full min-h-0">
 			<ScrollArea className="flex-1 min-h-0 px-4 py-6">
 				<div className="space-y-4">

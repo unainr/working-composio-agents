@@ -4,17 +4,18 @@ import * as React from "react";
 import { useForm } from "@tanstack/react-form";
 import { toast } from "sonner";
 import * as z from "zod";
-import { RefreshCw } from "lucide-react";
+import { Plus, RefreshCw } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import {
-	Card,
-	CardContent,
-	CardDescription,
-	CardFooter,
-	CardHeader,
-	CardTitle,
-} from "@/components/ui/card";
+	Dialog,
+	DialogContent,
+	DialogDescription,
+	DialogFooter,
+	DialogHeader,
+	DialogTitle,
+	DialogTrigger,
+} from "@/components/ui/dialog";
 import {
 	Field,
 	FieldDescription,
@@ -60,17 +61,29 @@ const formSchema = z.object({
 
 // ── Component ─────────────────────────────────────────────────────────────────
 
-export function CreateAgentForm() {
+interface CreateAgentDialogProps {
+	trigger?: React.ReactNode; // pass a custom trigger, or fall back to the default button
+}
+
+export function CreateAgentDialog({ trigger }: CreateAgentDialogProps) {
+	const [open, setOpen] = React.useState(false);
 	const { mutate, isPending } = useCreateAgents();
 
-	const [seed, setSeed] = React.useState("default"); // stable server seed
-	const [mounted, setMounted] = React.useState(false);
+	const [seed, setSeed] = React.useState("default");
 	const [spinning, setSpinning] = React.useState(false);
 
+	// Re-roll the avatar seed each time the dialog opens, so a fresh
+	// "Create Agent" always starts from a new random face rather than
+	// whatever seed was left over from the previous open/close.
 	React.useEffect(() => {
-		setSeed(randomSeed()); // runs only on client after hydration
-		setMounted(true);
-	}, []);
+		if (open) {
+			const next = randomSeed();
+			setSeed(next);
+			form.setFieldValue("avatarUrl", buildAvatarUrl(next));
+		}
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [open]);
+
 	const form = useForm({
 		defaultValues: {
 			name: "",
@@ -83,8 +96,9 @@ export function CreateAgentForm() {
 		onSubmit: async ({ value }) => {
 			mutate(value, {
 				onSuccess: () => {
-					toast.success("agent created successfully");
+					toast.success("Agent created successfully");
 					form.reset();
+					setOpen(false);
 				},
 			});
 		},
@@ -99,15 +113,24 @@ export function CreateAgentForm() {
 	}
 
 	return (
-		<Card className="w-full sm:max-w-md">
-			<CardHeader>
-				<CardTitle>Create Agent</CardTitle>
-				<CardDescription>
-					Set up a new AI agent with a name, avatar, and description.
-				</CardDescription>
-			</CardHeader>
+		<Dialog open={open} onOpenChange={setOpen}>
+			<DialogTrigger asChild>
+				{trigger ?? (
+					<Button className="gap-1.5">
+						<Plus className="h-4 w-4" />
+						New agent
+					</Button>
+				)}
+			</DialogTrigger>
 
-			<CardContent>
+			<DialogContent className="sm:max-w-md">
+				<DialogHeader>
+					<DialogTitle>Create Agent</DialogTitle>
+					<DialogDescription>
+						Set up a new AI agent with a name, avatar, and description.
+					</DialogDescription>
+				</DialogHeader>
+
 				<form
 					id="create-agent-form"
 					onSubmit={(e) => {
@@ -226,10 +249,8 @@ export function CreateAgentForm() {
 						/>
 					</FieldGroup>
 				</form>
-			</CardContent>
 
-			<CardFooter>
-				<Field orientation="horizontal">
+				<DialogFooter>
 					<Button
 						type="button"
 						variant="outline"
@@ -244,8 +265,8 @@ export function CreateAgentForm() {
 					<Button disabled={isPending} type="submit" form="create-agent-form">
 						{isPending ? "Creating..." : "Create Agent"}
 					</Button>
-				</Field>
-			</CardFooter>
-		</Card>
+				</DialogFooter>
+			</DialogContent>
+		</Dialog>
 	);
 }

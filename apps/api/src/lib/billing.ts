@@ -95,3 +95,28 @@ export async function canCreateAgent(c: Ctx, userId: string) {
     plan,
   };
 }
+
+
+export async function deductCreditsClamped(c: Ctx, userId: string, amount: number) {
+  const db = getDb(c.env);
+  const row = await getOrCreateCredits(c, userId);
+
+  const newBalance = Math.max(0, row.credits - amount);
+
+  const [updated] = await db
+    .update(userCredits)
+    .set({ credits: newBalance, updatedAt: new Date() })
+    .where(eq(userCredits.userId, userId))
+    .returning();
+
+  return updated;
+}
+
+// A lightweight pre-check before starting a new conversation — confirms the
+// user has at least the minimum possible charge available, so someone at 0
+// credits can't start a chat they can never afford, without needing to
+// guess the exchange's eventual real cost upfront.
+export async function hasMinimumCredits(c: Ctx, userId: string, minimum: number) {
+  const row = await getOrCreateCredits(c, userId);
+  return row.credits >= minimum;
+}
