@@ -16,6 +16,9 @@ import { Spinner } from "@/components/ui/spinner";
 
 import { useChatMessages, useInvalidateChats } from "@/hooks/use-chat";
 import { ChatHistoryList } from "@/components/ChatHistoryList";
+import { useQueryClient } from "@tanstack/react-query";
+import { billingKey } from "@/hooks/use-billing";
+import { UpgradeDialog } from "@/components/upgrade-dialog";
 
 interface AgentChatWidgetProps {
 	agentId: string;
@@ -31,7 +34,8 @@ export function AgentChatWidget({
 	const [open, setOpen] = useState(false);
 	const [activeChatId, setActiveChatId] = useState<string | null>(null);
 	const [tab, setTab] = useState("chat");
-
+	const [showUpgrade, setShowUpgrade] = useState(false);
+	const queryClient = useQueryClient();
 	// isLoading is only true while a chatId is set AND the fetch hasn't resolved yet
 	const { data: history, isLoading: historyLoading } =
 		useChatMessages(activeChatId);
@@ -128,10 +132,12 @@ export function AgentChatWidget({
 											typeof ChatWindow
 										>["initialMessages"]
 									}
-									onChatCreated={(id: string) => {
+									onChatCreated={(id) => {
 										setActiveChatId(id);
 										invalidateChats(agentId);
+										queryClient.invalidateQueries({ queryKey: billingKey }); // refresh credit balance
 									}}
+									onInsufficientCredits={() => setShowUpgrade(true)}
 								/>
 							) : (
 								// Shown briefly while history loads for a resumed chat
@@ -156,6 +162,11 @@ export function AgentChatWidget({
 					</TabsContent>
 				</Tabs>
 			</PopoverContent>
+			<UpgradeDialog
+				open={showUpgrade}
+				onOpenChange={setShowUpgrade}
+				reason="credits"
+			/>
 		</Popover>
 	);
 }

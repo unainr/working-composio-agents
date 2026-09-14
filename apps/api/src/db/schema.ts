@@ -40,3 +40,14 @@ export const chatMessages = pgTable("chat_messages", {
   parts: jsonb("parts").notNull(), // store the full UIMessage.parts array (text + tool calls)
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
+
+
+
+// db/schema.ts (add this)
+export const userCredits = pgTable("user_credits", {
+  userId: text("user_id").primaryKey(),
+  credits: integer("credits").notNull().default(40),
+  plan: text("plan").notNull().default("free"), // cached snapshot of Clerk's plan
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});

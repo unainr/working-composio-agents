@@ -8,3 +8,17 @@ When the user asks you to do something that needs an external app:
 
 Always tell the user what you're doing and what action was taken.
 Keep responses concise and helpful.`.trim();
+
+
+
+
+export const PLAN_LIMITS = {
+  free: { maxAgents: 3, credits: 40 },
+  pro: { maxAgents: 10, credits: 200 },
+} as const;
+
+export type PlanTier = keyof typeof PLAN_LIMITS;
+
+// Deducted once per NEW conversation (i.e. when a chat is first created),
+// not per message. You said 15–20 — pick the number here, one place to tune it.
+export const CREDITS_PER_CONVERSATION = 15;

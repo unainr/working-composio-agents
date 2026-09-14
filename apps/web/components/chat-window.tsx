@@ -18,6 +18,7 @@ interface ChatWindowProps {
 	chatId?: string | null;
 	initialMessages?: UIMessage[];
 	onChatCreated?: (chatId: string) => void;
+	  onInsufficientCredits?: () => void;
 }
 
 export function ChatWindow({
@@ -25,6 +26,7 @@ export function ChatWindow({
 	chatId,
 	initialMessages,
 	onChatCreated,
+	onInsufficientCredits
 }: ChatWindowProps) {
 	const bottomRef = useRef<HTMLDivElement>(null);
 	const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -33,11 +35,16 @@ export function ChatWindow({
 		id: chatId ?? undefined,
 		messages: initialMessages,
 		transport: new DefaultChatTransport({
+			
 			api: `${process.env.NEXT_PUBLIC_API_URL}/api/chat`,
 			credentials: "include",
 			body: { agentId, chatId },
 			fetch: async (input, init) => {
+				
 				const response = await fetch(input, init);
+				 if (response.status === 402) {
+    onInsufficientCredits?.();
+  }
 				const newChatId = response.headers.get("X-Chat-Id");
 				if (newChatId && newChatId !== chatId) {
 					onChatCreated?.(newChatId);
