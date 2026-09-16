@@ -40,13 +40,9 @@ const app = new Hono<{ Bindings: CloudflareBindings }>()
 			);
 		}
 
-		// Only new conversations are ever charged. We can't know the real cost
-		// until the reply is generated, so this is just a sanity check that the
-		// user has at least the minimum possible charge available — the real
-		// amount is calculated from actual token usage in onFinish below.
 		if (isNewChat) {
 			const canAfford = await hasMinimumCredits(
-				c,
+				c.env,
 				userId,
 				CREDIT_CONVERSION.minCreditsPerConversation,
 			);
@@ -98,8 +94,6 @@ const app = new Hono<{ Bindings: CloudflareBindings }>()
 			stopWhen: stepCountIs(15),
 			onError: (error) => {
 				console.error("[chat] streamText error:", error);
-				// Nothing to refund — credits are only deducted below in onFinish,
-				// which never runs if the stream errors out completely.
 			},
 			onFinish: async ({ response, usage }) => {
 				try {
@@ -132,7 +126,7 @@ const app = new Hono<{ Bindings: CloudflareBindings }>()
 
 					if (isNewChat) {
 						const creditsToCharge = calculateCreditsForUsage(usage);
-						await deductCreditsClamped(c, userId, creditsToCharge);
+						await deductCreditsClamped(c.env, userId, creditsToCharge);
 					}
 				} catch (err) {
 					console.error("[chat] failed to persist assistant message or deduct credits:", err);

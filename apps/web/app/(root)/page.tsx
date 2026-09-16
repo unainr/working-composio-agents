@@ -1,13 +1,11 @@
-import { AgentList } from "@/components/agents/components/AgentList";
-import { CreateAgentDialog } from "@/components/agents/components/agents-form";
+import { Homeview } from "@/components/home/view/home-view";
 
 
 
 const HomePage = () => {
 	return (
 		<>
-		<CreateAgentDialog />
-		<AgentList/>
+		<Homeview/>
 		</>
 	);
 };

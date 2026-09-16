@@ -92,6 +92,7 @@ export function ChatWindow({
 
 	return (
 		<div className="flex flex-col h-full min-h-0">
+			{/* Messages */}
 			<ScrollArea className="flex-1 min-h-0 px-4 py-6">
 				<div className="space-y-4">
 					{messages.length === 0 && !isThinking && <EmptyState />}
@@ -133,21 +134,37 @@ export function ChatWindow({
 				</div>
 			</ScrollArea>
 
-			<div className="border-t px-4 py-3 shrink-0">
-				<div className="flex items-end gap-2">
+			{/* Input bar */}
+			<div className="shrink-0 border-t border-border/50 px-3 py-3">
+				<div
+					className={cn(
+						"flex items-end gap-2 rounded-xl border border-border/60 bg-muted/40 px-3 py-2",
+						"focus-within:border-primary/50 focus-within:bg-background transition-colors duration-150",
+					)}
+				>
 					<Textarea
 						ref={inputRef}
 						rows={1}
 						onKeyDown={handleKeyDown}
 						disabled={isStreaming}
 						placeholder="Ask the agent to do something…"
-						className="flex-1 resize-none"
+						className={cn(
+							"flex-1 resize-none border-0 bg-transparent p-0 shadow-none",
+							"focus-visible:ring-0 focus-visible:ring-offset-0",
+							"text-sm leading-relaxed placeholder:text-muted-foreground/50",
+							"min-h-5.5",
+						)}
 					/>
-					<Button onClick={handleSend} disabled={isStreaming} size="icon">
-						<Send className="h-4 w-4" />
+					<Button
+						onClick={handleSend}
+						disabled={isStreaming}
+						size="icon"
+						className="h-7 w-7 shrink-0 rounded-lg"
+					>
+						<Send className="h-3.5 w-3.5" />
 					</Button>
 				</div>
-				<p className="mt-1 text-xs text-muted-foreground">
+				<p className="mt-1.5 text-[11px] text-muted-foreground/40 text-center">
 					Enter to send · Shift+Enter for new line
 				</p>
 			</div>
@@ -178,7 +195,8 @@ function MessageBubble({
 					isUser
 						? "bg-primary text-primary-foreground rounded-tr-sm whitespace-pre-wrap"
 						: "bg-muted text-foreground rounded-tl-sm",
-				)}>
+				)}
+			>
 				{isUser ? text : <MarkdownContent content={text} />}
 				{isStreaming && text && <Cursor />}
 			</div>
@@ -220,7 +238,8 @@ function MarkdownContent({ content }: { content: string }) {
 							href={href}
 							target="_blank"
 							rel="noopener noreferrer"
-							className="inline-flex items-center gap-1 text-primary underline underline-offset-2 hover:opacity-80">
+							className="inline-flex items-center gap-1 text-primary underline underline-offset-2 hover:opacity-80"
+						>
 							{children}
 							<ExternalLink className="h-3 w-3 shrink-0" />
 						</a>
@@ -257,7 +276,8 @@ function MarkdownContent({ content }: { content: string }) {
 					td: ({ children }) => (
 						<td className="border border-border px-2 py-1">{children}</td>
 					),
-				}}>
+				}}
+			>
 				{content}
 			</ReactMarkdown>
 		</div>

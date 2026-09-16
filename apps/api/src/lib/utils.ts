@@ -33,21 +33,14 @@ export const PLAN_LIMITS = {
 
 export type PlanTier = keyof typeof PLAN_LIMITS;
 
-// Credits are now calculated from actual token usage per conversation,
-// not charged as a flat amount — "hi" costs close to nothing, a long
-// tool-heavy exchange costs more, proportional to what it actually cost you.
+export const POLAR_PRO_PRODUCT_ID = "a9ec65ec-ca1f-400f-837f-26aa0929065d";
+export const PRO_PRICE_DISPLAY = "$15/mo";
+
+// Credits are calculated from actual token usage per conversation (see
+// chat.ts's onFinish), not charged as a flat amount.
 export const CREDIT_CONVERSION = {
-  // 1 credit ≈ this many combined input+output tokens.
-  // Tune against your real Gemini pricing so this lands near what you were
-  // targeting with the old flat 10-credits-per-conversation number.
   tokensPerCredit: 500,
-
-  // Floor — even a one-word reply costs at least this much, so credits
-  // still have real value and can't be farmed with empty messages.
   minCreditsPerConversation: 1,
-
-  // Ceiling — caps what a single new-conversation exchange can cost,
-  // so one unusually long agentic run can't silently wipe someone's balance.
   maxCreditsPerConversation: 20,
 } as const;
 
@@ -57,9 +50,8 @@ export function calculateCreditsForUsage(usage: {
 }): number {
   const totalTokens = (usage.inputTokens ?? 0) + (usage.outputTokens ?? 0);
   const raw = Math.ceil(totalTokens / CREDIT_CONVERSION.tokensPerCredit);
-
   return Math.min(
     CREDIT_CONVERSION.maxCreditsPerConversation,
-    Math.max(CREDIT_CONVERSION.minCreditsPerConversation, raw)
+    Math.max(CREDIT_CONVERSION.minCreditsPerConversation, raw),
   );
 }
