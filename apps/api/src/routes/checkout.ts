@@ -1,6 +1,7 @@
 import { Hono } from "hono";
 import { requireUser } from "../middleware/auth";
 import { getPolarClient } from "../lib/polar";
+import type { CloudflareBindings } from "../types";
 
 
 import { POLAR_PRO_PRODUCT_ID } from "../lib/utils";

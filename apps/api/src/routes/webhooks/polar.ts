@@ -3,6 +3,7 @@ import { validateEvent, WebhookVerificationError } from "@polar-sh/sdk/webhooks"
 import { getDb } from "../../db";
 import { processedWebhookEvents } from "../../db/schema";
 import { grantPlanCredits } from "../../lib/billing";
+import type { CloudflareBindings } from "../../types";
 
 const app = new Hono<{ Bindings: CloudflareBindings }>()
   .post("/", async (c) => {

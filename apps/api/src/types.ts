@@ -8,4 +8,7 @@ export type CloudflareBindings = {
 	GROQ_API_KEY: string;
 	OPEN_ROUTER_API_KEY: string;
 	COMPOSIO_API_KEY: string;
+	POLAR_ACCESS_TOKEN: string;
+	POLAR_WEBHOOK_SECRET: string;
+
 };
