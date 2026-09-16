@@ -12,7 +12,7 @@ import { Send, ExternalLink } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Spinner } from "./ui/spinner";
 import type { UIMessage } from "ai";
-
+import { useAuth } from '@clerk/nextjs';
 interface ChatWindowProps {
 	agentId: string;
 	chatId?: string | null;
@@ -32,13 +32,17 @@ export function ChatWindow({
 }: ChatWindowProps) {
 	const bottomRef = useRef<HTMLDivElement>(null);
 	const inputRef = useRef<HTMLTextAreaElement>(null);
+	  const { getToken } = useAuth();
 
 	const { messages, sendMessage, status, error } = useChat({
 		id: chatId ?? undefined,
 		messages: initialMessages,
 		transport: new DefaultChatTransport({
 			api: `${process.env.NEXT_PUBLIC_API_URL}/api/chat`,
-			credentials: "include",
+			headers: async () => {
+        const token = await getToken();
+        return { Authorization: `Bearer ${token}` };
+      },
 			body: { agentId, chatId },
 			fetch: async (input, init) => {
 				const response = await fetch(input, init);
