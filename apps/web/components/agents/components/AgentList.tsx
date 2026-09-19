@@ -36,12 +36,14 @@ import {
 	ArrowUpDown,
 	ArrowUp,
 	ArrowDown,
+	ArrowRight,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 import { useAgentsGet } from "../hooks/use-agents-hook";
 import { AgentChatWidget } from "./AgentChatSheet";
 import { DeleteAgentsButton } from "./delete-agents-button";
+import Link from "next/link";
 
 type Agent = {
 	id: string;
@@ -112,6 +114,11 @@ const columns = [
 			return (
 				<div className="flex items-center justify-end gap-1">
 					<DeleteAgentsButton agentId={agent.id} />
+					<Link href={`/dashboard/chat/${agent.id}`}>
+						<Button variant="ghost" size="sm">
+							<ArrowRight className="h-3.5 w-3.5" />
+						</Button>
+					</Link>
 					<AgentChatWidget
 						agentId={agent.id}
 						agentName={agent.name}
