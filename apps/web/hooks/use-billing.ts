@@ -4,9 +4,7 @@ import { client } from "@/lib/hono";
 import { useQuery } from "@tanstack/react-query";
 
 export type BillingInfo = {
-  plan: "free" | "pro";
   credits: number;
-  maxCredits: number;
   agents: { current: number; max: number };
 };
 
@@ -18,9 +16,9 @@ export function useBilling() {
     queryFn: async (): Promise<BillingInfo> => {
       const res = await client.api.billing.$get();
       if (!res.ok) throw new Error("Failed to fetch billing info");
-           return (await res.json()) as BillingInfo;
-
+      return (await res.json()) as BillingInfo;
     },
-   
+    staleTime: 60 * 1000,
+    refetchOnWindowFocus: false,
   });
 }

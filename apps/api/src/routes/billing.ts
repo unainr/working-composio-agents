@@ -13,12 +13,11 @@ const app = new Hono<{ Bindings: CloudflareBindings }>()
 			canCreateAgent(c.env, userId),
 		]);
 
-		return c.json({
-			plan: credits.plan,
-			credits: credits.credits,
-			maxCredits: PLAN_LIMITS[credits.plan as keyof typeof PLAN_LIMITS].credits,
-			agents: { current: agentLimit.current, max: agentLimit.max },
-		});
+	return c.json({
+  credits: credits.credits,
+  maxCredits: 1000,
+  agents: { current: agentLimit.current, max: agentLimit.max },
+});
 	});
 
 export default app;
