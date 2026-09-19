@@ -9,7 +9,7 @@ import disconnect from "./routes/disconnect";
 import agents from "./routes/agents";
 import billing from "./routes/billing";
 import checkout from "./routes/checkout";
-import polar from "./routes/webhooks/polar";
+
 
 const app = new Hono<{ Bindings: CloudflareBindings }>()
 	.basePath("/api")
@@ -19,7 +19,6 @@ const app = new Hono<{ Bindings: CloudflareBindings }>()
 			credentials: true,
 		})(c, next);
 	})
-	.route("/webhooks/polar", polar)
 	.use("*", async (c, next) => {
 		return clerkMiddleware({
 			publishableKey: c.env.CLERK_PUBLISHABLE_KEY,

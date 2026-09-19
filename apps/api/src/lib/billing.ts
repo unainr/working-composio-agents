@@ -6,29 +6,44 @@ import type { CloudflareBindings } from "../types";
 
 type Db = ReturnType<typeof getDb>;
 
-/**
- * Gets the user's credit row, creating a free-tier row on first access.
- * Takes the raw env bindings rather than a Hono Context — these functions
- * only ever need db access, and depending on the full Context generic here
- * made every call site fight Hono's Variables typing whenever middleware
- * added its own userId shape. Passing c.env instead sidesteps that entirely.
- */
 export async function getOrCreateCredits(env: CloudflareBindings, userId: string) {
   const db = getDb(env);
 
-  // Try insert first — if user already exists, do nothing
   await db
     .insert(userCredits)
-    .values({ userId, credits: PLAN_LIMITS.free.credits, plan: "free" })
+    .values({ userId, credits: 40 }) // ← no plan
     .onConflictDoNothing();
 
-  // Always fetch and return the row (whether just created or already existed)
   const [row] = await db
     .select()
     .from(userCredits)
     .where(eq(userCredits.userId, userId));
 
   return row;
+}
+
+// Add credits on top of existing balance (for credit pack purchases)
+export async function addCredits(db: Db, userId: string, amount: number, description: string) {
+  const [updated] = await db
+    .insert(userCredits)
+    .values({ userId, credits: amount }) // ← no plan here
+    .onConflictDoUpdate({
+      target: userCredits.userId,
+      set: {
+        credits: sql`${userCredits.credits} + ${amount}`,
+        updatedAt: new Date(),
+      },
+    })
+    .returning();
+
+  await db.insert(creditTransactions).values({
+    userId,
+    type: "purchase",
+    amount,
+    description,
+  });
+
+  return updated;
 }
 
 export async function deductCreditsClamped(
@@ -64,34 +79,19 @@ export async function hasMinimumCredits(env: CloudflareBindings, userId: string,
   return row.credits >= minimum;
 }
 
+// billing.ts
 export async function canCreateAgent(env: CloudflareBindings, userId: string) {
   const db = getDb(env);
   const row = await getOrCreateCredits(env, userId);
-  const plan = row.plan as PlanTier;
 
-  const userAgents = await db.select({ id: agents.id }).from(agents).where(eq(agents.userId, userId));
+  const userAgents = await db
+    .select({ id: agents.id })
+    .from(agents)
+    .where(eq(agents.userId, userId));
 
   return {
-    allowed: userAgents.length < PLAN_LIMITS[plan].maxAgents,
+    allowed: userAgents.length < 10,
     current: userAgents.length,
-    max: PLAN_LIMITS[plan].maxAgents,
-    plan,
+    max: 10,
   };
-}
-
-export async function grantPlanCredits(db: Db, userId: string, plan: PlanTier) {
-  await db
-    .insert(userCredits)
-    .values({ userId, plan, credits: PLAN_LIMITS[plan].credits })
-    .onConflictDoUpdate({
-      target: userCredits.userId,
-      set: { plan, credits: PLAN_LIMITS[plan].credits, updatedAt: new Date() },
-    });
-
-  await db.insert(creditTransactions).values({
-    userId,
-    type: "monthly_grant",
-    amount: PLAN_LIMITS[plan].credits,
-    description: `${plan === "pro" ? "Pro" : "Free"} plan — credits reset`,
-  });
 }

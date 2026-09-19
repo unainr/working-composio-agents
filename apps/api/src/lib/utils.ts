@@ -33,11 +33,13 @@ export const PLAN_LIMITS = {
 
 export type PlanTier = keyof typeof PLAN_LIMITS;
 
-export const POLAR_PRO_PRODUCT_ID = "a9ec65ec-ca1f-400f-837f-26aa0929065d";
-export const PRO_PRICE_DISPLAY = "$15/mo";
+// Credit packs — product ID maps to credits to add
+export const CREDIT_PACKS: Record<string, number> = {
+  "76e82748-5a1f-4fac-ab12-bbf304f4e475": 100,
+  "f6dd282c-7f0a-4da9-bdd9-cbde111869ff": 350,
+  "51cba6f8-d736-469c-8426-a0d4ea80174c": 1000,
+};
 
-// Credits are calculated from actual token usage per conversation (see
-// chat.ts's onFinish), not charged as a flat amount.
 export const CREDIT_CONVERSION = {
   tokensPerCredit: 500,
   minCreditsPerConversation: 1,
