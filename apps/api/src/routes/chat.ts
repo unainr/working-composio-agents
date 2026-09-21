@@ -40,7 +40,7 @@ const app = new Hono<{ Bindings: CloudflareBindings }>()
 			);
 		}
 
-		if (isNewChat) {
+		    // Check credits on every message — not just new chats
 			const canAfford = await hasMinimumCredits(
 				c.env,
 				userId,
@@ -54,7 +54,7 @@ const app = new Hono<{ Bindings: CloudflareBindings }>()
 					},
 					402,
 				);
-			}
+			
 		}
 
 		let chatId = body.chatId;
@@ -124,10 +124,10 @@ const app = new Hono<{ Bindings: CloudflareBindings }>()
 						.set({ updatedAt: new Date() })
 						.where(eq(chats.id, chatId));
 
-					if (isNewChat) {
+					
 						const creditsToCharge = calculateCreditsForUsage(usage);
 						await deductCreditsClamped(c.env, userId, creditsToCharge);
-					}
+					
 				} catch (err) {
 					console.error("[chat] failed to persist assistant message or deduct credits:", err);
 				}

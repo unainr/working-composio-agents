@@ -114,7 +114,7 @@ const columns = [
 			return (
 				<div className="flex items-center justify-end gap-1">
 					<DeleteAgentsButton agentId={agent.id} />
-					<Link href={`/dashboard/chat/${agent.id}`}>
+					<Link href={`/chat/${agent.id}`}>
 						<Button variant="ghost" size="sm">
 							<ArrowRight className="h-3.5 w-3.5" />
 						</Button>
