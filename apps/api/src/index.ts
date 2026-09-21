@@ -9,6 +9,7 @@ import disconnect from "./routes/disconnect";
 import agents from "./routes/agents";
 import billing from "./routes/billing";
 import checkout from "./routes/checkout";
+import stats from "./routes/stats";
 
 
 const app = new Hono<{ Bindings: CloudflareBindings }>()
@@ -33,6 +34,7 @@ const app = new Hono<{ Bindings: CloudflareBindings }>()
 	.route("/agents",agents)
 	.route("/billing", billing)
 	.route("/checkout",checkout)
+	.route("/stats", stats)
 
 
 export default app;
