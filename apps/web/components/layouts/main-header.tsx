@@ -9,6 +9,7 @@ import { ThemeSwitcher } from "../theme/mode-toggle";
 import { MenuIcon, XIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { CreditsDisplay } from "../agents/components/credits-display";
+import Logo from "./logo";
 
 const menuItems = [
   { name: "Agent", href: "/agent" },
@@ -28,12 +29,7 @@ export function MainHeader() {
         <div className="mx-auto flex h-full max-w-7xl items-center justify-between gap-4 px-5">
           {/* LEFT — logo + separator + links */}
           <div className="flex h-full items-center">
-            <Link
-              href="/"
-              className="flex items-center gap-2 pr-5 text-lg font-bold tracking-tight transition-opacity hover:opacity-80"
-            >
-              <span className="text-foreground">Amanises</span>
-            </Link>
+            <Logo/>
 
             <div className="hidden h-5 w-px bg-border lg:block" />
 

@@ -28,6 +28,7 @@ import { SignInButtonClerk } from "@/components/clerk-sign-button/Sign-in-button
 import { ThemeSwitcher } from "@/components/theme/mode-toggle";
 import { useBilling } from "@/hooks/use-billing";
 import { cn } from "@/lib/utils";
+import Logo from "./layouts/logo";
 
 const navItems = [
   { href: "/", label: "Back to home", icon: ArrowLeft },
@@ -45,17 +46,10 @@ export function DashboardSidebar() {
   const creditsEmpty = billing && billing.credits <= 0;
 
   return (
-    <Sidebar collapsible="icon">
+    <Sidebar collapsible="icon"className="h-full">
       {/* Header */}
       <SidebarHeader className="h-14 justify-center border-b px-3">
-        <Link href="/" className="flex items-center gap-2.5 overflow-hidden">
-          <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-primary">
-            <Sparkles className="h-4 w-4 text-primary-foreground" />
-          </div>
-          {!isCollapsed && (
-            <span className="font-semibold text-sm truncate">Amanises</span>
-          )}
-        </Link>
+       <Logo/>
       </SidebarHeader>
 
       <SidebarContent>
@@ -113,16 +107,7 @@ export function DashboardSidebar() {
           </Link>
         )}
 
-        <SidebarMenu>
-          <SidebarMenuItem>
-            <SidebarMenuButton asChild tooltip="Settings">
-              <Link href="/settings">
-                <Settings className="h-4 w-4" />
-                <span>Settings</span>
-              </Link>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-        </SidebarMenu>
+       
 
         {!isCollapsed && (
           <div className="flex items-center justify-between gap-2 rounded-lg border bg-background/40 px-2 py-1.5">
