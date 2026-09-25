@@ -140,13 +140,13 @@ function EmptyState({
   action?: React.ReactNode;
 }) {
   return (
-    <div className="flex h-full min-h-[180px] flex-col items-center justify-center gap-1 text-center">
+    <div className="flex h-full min-h-45 flex-col items-center justify-center gap-1 text-center">
       <div className="mb-2 flex h-10 w-10 items-center justify-center rounded-full bg-muted">
         <Icon className="h-5 w-5 text-muted-foreground" />
       </div>
       <p className="text-sm font-medium">{title}</p>
       {description && (
-        <p className="max-w-[240px] text-xs text-muted-foreground">
+        <p className="max-w-60 text-xs text-muted-foreground">
           {description}
         </p>
       )}
@@ -393,7 +393,7 @@ export default function StatsPage() {
           </CardHeader>
           <CardContent>
             {isLoading ? (
-              <Skeleton className="h-[260px] w-full" />
+              <Skeleton className="h-65 w-full" />
             ) : !hasFlow ? (
               <EmptyState
                 icon={CreditCard}
@@ -401,7 +401,7 @@ export default function StatsPage() {
                 description="Credits you add or spend will show up here."
               />
             ) : (
-              <ChartContainer config={flowConfig} className="h-[260px] w-full">
+              <ChartContainer config={flowConfig} className="h-65 w-full">
                 <AreaChart data={flowData} margin={{ left: 4, right: 4, top: 8 }}>
                   <defs>
                     <linearGradient id="fillAdded" x1="0" y1="0" x2="0" y2="1">
@@ -472,11 +472,11 @@ export default function StatsPage() {
           </CardHeader>
           <CardContent className="flex flex-col items-center pb-6">
             {isLoading ? (
-              <Skeleton className="my-4 h-[200px] w-[200px] rounded-full" />
+              <Skeleton className="my-4 h-50 w-50 rounded-full" />
             ) : (
               <ChartContainer
                 config={agentConfig}
-                className="mx-auto aspect-square h-[220px]"
+                className="mx-auto aspect-square h-55"
               >
                 <RadialBarChart
                   data={[
@@ -574,7 +574,7 @@ export default function StatsPage() {
           </CardHeader>
           <CardContent>
             {isLoading ? (
-              <Skeleton className="h-[200px] w-full" />
+              <Skeleton className="h-50 w-full" />
             ) : !hasChatActivity ? (
               <EmptyState
                 icon={MessageSquare}
@@ -587,7 +587,7 @@ export default function StatsPage() {
                 }
               />
             ) : (
-              <ChartContainer config={chatConfig} className="h-[200px] w-full">
+              <ChartContainer config={chatConfig} className="h-50 w-full">
                 <BarChart data={chatData} margin={{ left: 4, right: 4, top: 8 }}>
                   <CartesianGrid vertical={false} strokeDasharray="3 3" />
                   <XAxis
