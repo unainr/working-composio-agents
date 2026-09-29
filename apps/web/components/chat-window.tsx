@@ -10,9 +10,11 @@ import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Send, ExternalLink } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { Spinner } from "./ui/spinner";
+
 import type { UIMessage } from "ai";
 import { useAuth } from '@clerk/nextjs';
+
+import GridLoader from "./loader/grid-load";
 interface ChatWindowProps {
 	agentId: string;
 	chatId?: string | null;
@@ -290,25 +292,22 @@ function MarkdownContent({ content }: { content: string }) {
 
 function ThinkingIndicator() {
 	return (
-		<div className="flex justify-start">
-			<div className="flex items-center gap-2 rounded-2xl rounded-tl-sm bg-muted px-4 py-2.5 text-sm text-muted-foreground">
-				<Spinner />
-				<span>Thinking</span>
-				<BouncingDots />
-			</div>
-		</div>
+		<div className="flex items-center gap-2.5 rounded-full px-4 py-2">
+          <GridLoader
+            blur={1}
+            color="white"
+            gap={1}
+            mode="stagger"
+            pattern="frame"
+            size="sm"
+          />
+          <span className="font-medium text-sm ">Thinking</span>
+        </div>
+
 	);
 }
 
-function BouncingDots() {
-	return (
-		<span className="flex gap-0.5">
-			<span className="h-1 w-1 rounded-full bg-current animate-bounce [animation-delay:-0.3s]" />
-			<span className="h-1 w-1 rounded-full bg-current animate-bounce [animation-delay:-0.15s]" />
-			<span className="h-1 w-1 rounded-full bg-current animate-bounce" />
-		</span>
-	);
-}
+
 
 function Cursor() {
 	return (
