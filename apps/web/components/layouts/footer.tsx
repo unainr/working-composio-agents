@@ -1,75 +1,72 @@
-// components/marketing/footer.tsx
-import Link from "next/link"
-import Image from "next/image"
+import Link from "next/link";
+import Logo from "./logo";
 
-const footerLinks = {
-  Product: [
-    { label: "Home", href: "/" },
-    { label: "Pricing", href: "/pricing" },
-  ],
-  Legal: [
-    { label: "Privacy", href: "#" },
-    { label: "Terms", href: "#" },
-  ],
-}
+const COLUMNS = [
+  {
+    title: "Product",
+    links: [
+      { label: "Features", href: "#features" },
+      { label: "Integrations", href: "#integrations" },
+      { label: "Pricing", href: "#pricing" },
+      { label: "FAQ", href: "#faq" },
+    ],
+  },
+  {
+    title: "Company",
+    links: [
+      { label: "About", href: "/about" },
+      { label: "Blog", href: "/blog" },
+      { label: "Contact", href: "mailto:hello@amanises.com" },
+    ],
+  },
+  {
+    title: "Legal",
+    links: [
+      { label: "Privacy policy", href: "/privacy" },
+      { label: "Terms of service", href: "/terms" },
+    ],
+  },
+];
 
-export function Footer() {
+export default function Footer() {
   return (
-    <footer className="border-t border-border bg-background">
-      <div className="mx-auto max-w-6xl px-6 py-19">
-        <div className="grid grid-cols-2 gap-10 sm:grid-cols-4">
-          <div className="col-span-2 sm:col-span-2">
-            <Link href="/" className="flex items-center gap-2">
-              <Image
-                src="/logo.svg"
-                alt="Seerforge Logo"
-                width={800}
-                height={800}
-                loading="eager"
-                className="hidden h-8 w-auto object-contain dark:block"
-              />
-              <Image
-                src="/logo1.svg"
-                alt="Seerforge Logo"
-                width={800}
-                height={800}
-                loading="eager"
-                className="block h-8 w-auto object-contain dark:hidden"
-              />
-            </Link>
-            <p className="mt-3 max-w-xs text-sm leading-relaxed text-muted-foreground">
-              Build AI agent workflows your whole team can see, test, and ship together.
+    <footer className="border-border border-t bg-background px-4 pt-14 pb-8 text-foreground">
+      <div className="mx-auto max-w-5xl">
+        <div className="grid gap-10 md:grid-cols-[1.6fr_repeat(3,1fr)]">
+          <div className="max-w-xs space-y-4">
+           
+              <Logo />
+            
+            <p className="text-muted-foreground text-sm leading-relaxed">
+              AI agents that chat with you and get real work done in Notion,
+              Slack, Gmail, Google Docs and more.
             </p>
           </div>
 
-          {Object.entries(footerLinks).map(([heading, links]) => (
-            <div key={heading}>
-              <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{heading}</p>
-              <ul className="my-3 space-y-2.5">
-                {links.map((link) => (
+          {COLUMNS.map((column) => (
+            <nav aria-label={column.title} key={column.title}>
+              <h3 className="mb-4 font-medium text-sm">{column.title}</h3>
+              <ul className="space-y-3">
+                {column.links.map((link) => (
                   <li key={link.label}>
                     <Link
+                      className="text-muted-foreground text-sm transition-colors hover:text-foreground"
                       href={link.href}
-                      className="text-sm text-muted-foreground transition-colors hover:text-foreground"
                     >
                       {link.label}
                     </Link>
                   </li>
                 ))}
               </ul>
-            </div>
+            </nav>
           ))}
         </div>
 
-        <div className="mt-14 flex flex-col items-center justify-between gap-3 border-t border-border pt-6 sm:flex-row">
-          <p className="text-xs text-muted-foreground">
-            © {new Date().getFullYear()} Seerforge. All rights reserved.
-          </p>
-          <p className="text-xs  text-muted-foreground">
-            Made by <span className="font-medium uppercase text-foreground">Unain</span>
-          </p>
+        <div className="mt-12 flex flex-col gap-2 border-border border-t pt-6 text-muted-foreground text-sm sm:flex-row sm:items-center sm:justify-between">
+          <p>© {new Date().getFullYear()} Amanises. All rights reserved.</p>
+          <p>Built for people who want their tools to work for them.</p>
         </div>
       </div>
     </footer>
-  )
+  );
 }

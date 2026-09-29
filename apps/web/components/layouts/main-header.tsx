@@ -16,6 +16,8 @@ const menuItems = [
   { name: "Pricing", href: "/pricing" },
 ];
 
+const ACCENT = "#993a05";
+
 export function MainHeader() {
   const [menuOpen, setMenuOpen] = useState(false);
   const pathname = usePathname();
@@ -25,58 +27,73 @@ export function MainHeader() {
 
   return (
     <>
-      <header className="fixed inset-x-0 top-0 z-50 h-14 border-b border-border/60 bg-background/70 backdrop-blur-xl supports-backdrop-filter:bg-background/60">
-        <div className="mx-auto flex h-full max-w-7xl items-center justify-between gap-4 px-5">
-          {/* LEFT — logo + separator + links */}
-          <div className="flex h-full items-center">
-            <Logo/>
-
-            <div className="hidden h-5 w-px bg-border lg:block" />
-
-            {/* Desktop links */}
-            <ul className="ml-5 hidden h-full items-center gap-1 lg:flex">
-              {menuItems.map((item) => {
-                const active = isActive(item.href);
-                return (
-                  <li key={item.href} className="h-full">
-                    <Link
-                      href={item.href}
-                      className={cn(
-                        "relative flex h-full items-center px-3.5 text-sm font-medium transition-colors duration-150",
-                        active
-                          ? "text-rose-500"
-                          : "text-muted-foreground hover:text-foreground"
-                      )}
-                    >
-                      {item.name}
-                      {active && (
-                        <span className="absolute inset-x-3.5 bottom-0 h-0.5 rounded-t-full bg-rose-500" />
-                      )}
-                    </Link>
-                  </li>
-                );
-              })}
-            </ul>
+      {/* Floating dock — detached pill, centered, not full-width */}
+      <header className="fixed inset-x-0 top-4 z-50 flex justify-center px-4">
+        <div
+          className={cn(
+            "flex h-14 items-center gap-1 rounded-full",
+            "bg-background/70 px-2 shadow-[0_8px_32px_-12px_rgba(0,0,0,0.25)] backdrop-blur-xl",
+            "supports-backdrop-filter:bg-background/60",
+          )}
+        >
+          {/* Logo */}
+          <div className="mx-1.5 flex items-center justify-center">
+            <Logo />
           </div>
 
-          {/* RIGHT — credits + theme + separator + cta + mobile toggle */}
-          <div className="flex items-center gap-3">
-            <div className="hidden sm:block">
-              <CreditsDisplay />
-            </div>
+          <div className="mx-1 h-6 w-px bg-border/70" />
 
+          {/* Desktop links */}
+          {/* <ul className="hidden items-center gap-1 lg:flex">
+            {menuItems.map((item) => {
+              const active = isActive(item.href);
+              return (
+                <li key={item.href}>
+                  <Link
+                    href={item.href}
+                    className={cn(
+                      "relative flex h-10 items-center rounded-full px-4 text-sm font-medium transition-colors duration-150",
+                      active
+                        ? "text-white"
+                        : "text-muted-foreground hover:text-foreground",
+                    )}
+                    style={active ? { backgroundColor: ACCENT } : undefined}
+                  >
+                    {item.name}
+                  </Link>
+                </li>
+              );
+            })}
+          </ul> */}
+
+          <div className="mx-1 hidden h-6 w-px bg-border/70 sm:block" />
+
+          {/* Credits */}
+          <div className="hidden items-center justify-center sm:flex">
+            <CreditsDisplay />
+          </div>
+
+          {/* Theme switcher */}
+          <div className="flex items-center justify-center">
             <ThemeSwitcher />
+          </div>
 
-            <div className="hidden h-5 w-px bg-border lg:block" />
+          <div className="mx-1 hidden h-6 w-px bg-border/70 lg:block" />
 
-            <div className="hidden items-center gap-2 lg:flex">
-              <SignInButtonClerk />
-            </div>
+          {/* Sign in */}
+          <div className="hidden items-center justify-center lg:flex">
+            <SignInButtonClerk />
+          </div>
 
-            {/* Mobile toggle */}
+          {/* Mobile toggle */}
+          <div className="flex items-center justify-center lg:hidden">
             <button
               onClick={() => setMenuOpen((v) => !v)}
-              className="flex h-8.5 w-8.5 items-center justify-center rounded-lg border border-border bg-transparent text-muted-foreground transition-colors hover:border-rose-500/30 hover:text-foreground lg:hidden"
+              className={cn(
+                "flex h-9.5 w-9.5 items-center justify-center rounded-full text-muted-foreground transition-colors",
+                "hover:text-foreground",
+              )}
+              style={menuOpen ? { color: ACCENT } : undefined}
               aria-label={menuOpen ? "Close menu" : "Open menu"}
               aria-expanded={menuOpen}
             >
@@ -90,18 +107,18 @@ export function MainHeader() {
         </div>
       </header>
 
-      {/* Spacer so page content isn't hidden under the fixed header */}
-      <div className="h-14" />
+      {/* Spacer so page content isn't hidden under the floating dock */}
+      <div className="h-20" />
 
       {/* Mobile drawer */}
       <div
         className={cn(
-          "fixed inset-x-0 top-14 z-40 overflow-hidden border-b border-border/60 bg-background/95 backdrop-blur-xl transition-[max-height,opacity] duration-200 lg:hidden",
-          menuOpen ? "max-h-96 opacity-100" : "max-h-0 opacity-0"
+          "fixed inset-x-4 top-20 z-40 overflow-hidden rounded-3xl bg-background/95 shadow-[0_8px_32px_-12px_rgba(0,0,0,0.25)] backdrop-blur-xl transition-[max-height,opacity] duration-200 lg:hidden",
+          menuOpen ? "max-h-96 opacity-100" : "max-h-0 opacity-0",
         )}
       >
         <nav className="flex flex-col gap-1 p-4">
-          {/* Credits shown here on small screens where the header hides it */}
+          {/* Credits shown here on small screens where the dock hides it */}
           <div className="mb-2 sm:hidden">
             <CreditsDisplay />
           </div>
@@ -114,18 +131,19 @@ export function MainHeader() {
                 href={item.href}
                 onClick={() => setMenuOpen(false)}
                 className={cn(
-                  "rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
+                  "rounded-full px-3.5 py-2.5 text-sm font-medium transition-colors",
                   active
-                    ? "bg-rose-500/10 text-rose-500"
-                    : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                    ? "text-white"
+                    : "text-muted-foreground hover:bg-muted hover:text-foreground",
                 )}
+                style={active ? { backgroundColor: ACCENT } : undefined}
               >
                 {item.name}
               </Link>
             );
           })}
 
-          <div className="mt-3 flex gap-2 border-t border-border pt-3">
+          <div className="mt-3 flex gap-4 border-t border-border pt-3">
             <SignInButtonClerk />
           </div>
         </nav>

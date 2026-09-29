@@ -10,9 +10,22 @@ const ALLOWED_TOOLKITS = [
 	"gmail",
 	"slack",
 	"notion",
-	"github",
 	"googledocs",
 	"instagram",
+	"twitter",
+	"linear",
+	"reddit",
+	"googlemeet",
+	"linkedin",
+	"discord",
+	"airtable",
+	"github",
+	"whatsapp",
+	"apollo",
+	"miro",
+	"canva",
+	"telegram",
+	"figma"
 ];
 
 // salons post api
