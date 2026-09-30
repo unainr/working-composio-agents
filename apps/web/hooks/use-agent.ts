@@ -78,7 +78,8 @@ export function useConnectToolkit() {
 		onSuccess: (data) => {
 			// Open the Composio OAuth page in a new tab
 			if (data.redirectUrl) {
-				window.open(data.redirectUrl,  "noopener,noreferrer");
+			window.location.assign(data.redirectUrl);
+				// window.open(data.redirectUrl, "_self", "noopener,noreferrer");
 			}
 		},
 	});

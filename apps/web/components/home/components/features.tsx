@@ -134,7 +134,7 @@ function ArrowCursor({
       </svg>
       <span
         className={cn(
-          "ml-2.5 -mt-1 px-2.5 py-1 text-[12px] font-semibold tracking-[-0.04em] sm:ml-3 sm:px-3 sm:text-[14px] lg:ml-4 lg:px-4 lg:py-1.5 lg:text-[17px]",
+          "ml-2.5 -mt-1 whitespace-nowrap px-2.5 py-1 text-[12px] font-semibold tracking-[-0.04em] sm:ml-3 sm:px-3 sm:text-[14px] lg:ml-4 lg:px-4 lg:py-1.5 lg:text-[17px]",
           inverted
             ? "rounded-full bg-[#f2f2f2] text-black shadow-[0_5px_18px_rgba(0,0,0,0.28)]"
             : cn(
@@ -197,9 +197,9 @@ function Panel({ className, children, ...props }: React.ComponentProps<"section"
 
 function FeatureCopy({ title, children, className }: { title: React.ReactNode; children: React.ReactNode; className?: string }) {
   return (
-    <div className={cn("absolute inset-x-0 bottom-0 z-20 px-5 pb-5 sm:px-7 sm:pb-7", className)}>
+    <div className={cn("absolute inset-x-0 bottom-0 z-20 px-4 pb-4 sm:px-7 sm:pb-7", className)}>
       <h3 className="text-[16px] font-medium leading-[1.08] tracking-[-0.045em] text-zinc-950 sm:text-[18px] dark:text-[#f1f1f1]">{title}</h3>
-      <p className="mt-2.5 max-w-82.5 text-[12px] leading-[1.35] tracking-[-0.015em] text-zinc-600 sm:mt-3 sm:text-[13px] dark:text-[#858585]">{children}</p>
+      <p className="mt-2 max-w-82.5 text-[12px] leading-[1.35] tracking-[-0.015em] text-zinc-600 sm:mt-3 sm:text-[13px] dark:text-[#858585]">{children}</p>
     </div>
   );
 }
@@ -250,7 +250,7 @@ function DesignsPanel({
   }, [autoPlay, brands.length, reduceMotion, rotationInterval, selectBrand, selected]);
 
   return (
-    <Panel className="min-h-87.5 sm:min-h-80 @min-[840px]:col-span-12 @min-[840px]:min-h-75.5 @min-[840px]:row-span-1">
+    <Panel className="min-h-100 sm:min-h-80 @min-[840px]:col-span-12 @min-[840px]:min-h-75.5 @min-[840px]:row-span-1">
       <div
         aria-hidden
         className="pointer-events-none absolute inset-x-0 top-0 grid h-[78%] grid-cols-28 grid-rows-9 gap-px overflow-hidden"
@@ -275,7 +275,7 @@ function DesignsPanel({
       />
       <div aria-hidden className="pointer-events-none absolute inset-x-0 top-0 h-[76%] bg-[radial-gradient(ellipse_at_50%_18%,transparent_12%,rgba(247,247,245,.12)_58%,#f7f7f5_100%)] dark:bg-[radial-gradient(ellipse_at_50%_18%,transparent_12%,rgba(8,8,8,.1)_58%,#080808_100%)]" />
 
-      <div className="absolute inset-x-4 top-[9%] z-10 mx-auto flex max-w-190 items-center gap-1.5 sm:inset-x-7 sm:top-[12%] sm:gap-2.5">
+      <div className="absolute inset-x-4 top-[8%] z-10 mx-auto flex max-w-190 items-center gap-1.5 sm:inset-x-7 sm:top-[12%] sm:gap-2.5">
         {brands.map((brand, index) => (
           <motion.button
             type="button"
@@ -319,12 +319,12 @@ function DesignsPanel({
 
       <ArrowCursor
         label={userLabel}
-        className="left-[35%] top-[40%]"
+        className="left-[35%] top-[36%] sm:top-[40%]"
         targetLeft={cursorStops[selected]}
         targetTop="40%"
         delay={0.2}
       />
-      <ArrowCursor label={collaboratorLabel} inverted className="left-[58%] top-[54%] sm:left-[62%] sm:top-[56%]" delay={0.9} />
+      <ArrowCursor label={collaboratorLabel} inverted className="left-[52%] top-[50%] sm:left-[62%] sm:top-[56%]" delay={0.9} />
 
       <FeatureCopy title={title}>{description}</FeatureCopy>
     </Panel>
@@ -366,7 +366,7 @@ function CreditPanel({ creditPacks, currency, locale, autoPlay, title, descripti
         <AnimatePresence initial={false} mode="wait">
           <motion.div
             key={pack.name}
-            className="absolute left-[21%] top-5 h-56.25 w-[58%] overflow-hidden rounded-[10px] border border-black/16 bg-[linear-gradient(145deg,#f5f5f2_0%,#eaeae6_46%,#dededa_100%)] p-3.5 shadow-[inset_0_1px_rgba(255,255,255,.9),0_18px_42px_rgba(24,24,27,.14),0_3px_8px_rgba(24,24,27,.08)] sm:left-auto sm:right-4 sm:h-62.5 sm:w-[89%] dark:border-[#343434]/80 dark:bg-[linear-gradient(145deg,#1c1c1c_0%,#161616_48%,#101010_100%)] dark:shadow-[inset_0_1px_rgba(255,255,255,.02),0_16px_36px_rgba(0,0,0,.38),0_3px_8px_rgba(0,0,0,.25)] @min-[520px]:right-7 @min-[520px]:p-5"
+            className="absolute left-1/2 top-5 h-56.25 w-[min(78%,15rem)] -translate-x-1/2 overflow-hidden rounded-[10px] border border-black/16 bg-[linear-gradient(145deg,#f5f5f2_0%,#eaeae6_46%,#dededa_100%)] p-3.5 shadow-[inset_0_1px_rgba(255,255,255,.9),0_18px_42px_rgba(24,24,27,.14),0_3px_8px_rgba(24,24,27,.08)] sm:left-auto sm:right-4 sm:h-62.5 sm:w-[89%] sm:translate-x-0 dark:border-[#343434]/80 dark:bg-[linear-gradient(145deg,#1c1c1c_0%,#161616_48%,#101010_100%)] dark:shadow-[inset_0_1px_rgba(255,255,255,.02),0_16px_36px_rgba(0,0,0,.38),0_3px_8px_rgba(0,0,0,.25)] @min-[520px]:right-7 @min-[520px]:p-5"
             initial={reduceMotion ? false : { y: 270, opacity: 0, rotate: -1.25 }}
             animate={{ y: 0, opacity: 1, rotate: 0 }}
             exit={reduceMotion ? { opacity: 0 } : { y: 285, opacity: 0, rotate: 1.1 }}
@@ -496,7 +496,7 @@ function PausePanel({
   };
 
   return (
-    <Panel className="min-h-85 sm:min-h-80 @min-[840px]:col-span-5 @min-[840px]:min-h-75.5 @min-[840px]:row-span-1">
+    <Panel className="min-h-96 sm:min-h-80 @min-[840px]:col-span-5 @min-[840px]:min-h-75.5 @min-[840px]:row-span-1">
       <div
         aria-hidden
         className="pointer-events-none absolute inset-0 opacity-[0.08] mix-blend-multiply dark:opacity-[0.09] dark:mix-blend-screen"
@@ -505,12 +505,16 @@ function PausePanel({
           backgroundSize: "4px 4px,5px 5px",
         }}
       />
-      <div className="absolute inset-x-0 top-0 flex h-[66%] items-center justify-center">
+      <div className="absolute inset-x-0 top-0 flex h-[62%] items-center justify-center sm:h-[66%]">
         {[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11].map((ring) => (
           <motion.div
             key={ring}
             aria-hidden
-            className="absolute border border-black/[0.07] dark:border-white/4"
+            // Outer rings only on >= sm so they don't crowd small screens
+            className={cn(
+              "absolute border border-black/[0.07] dark:border-white/4",
+              ring > 6 && "hidden sm:block",
+            )}
             style={{
               width: 190 + ring * 23,
               height: 100 + ring * 16,
@@ -529,7 +533,7 @@ function PausePanel({
           transition={spring}
           animate={{ scale: arrowLit ? 1.012 : 1 }}
           className={cn(
-            "relative z-10 flex h-19.5 min-w-43.5 items-center justify-center overflow-hidden rounded-[20px] border bg-linear-to-br from-white to-[#deded9] px-8 text-[28px] font-semibold tracking-[-0.055em] transition-[border-color,color,box-shadow] duration-500 dark:from-[#181818] dark:to-[#0d0d0d]",
+            "relative z-10 flex h-16 min-w-36 items-center justify-center overflow-hidden rounded-[18px] border bg-linear-to-br from-white to-[#deded9] px-6 text-2xl font-semibold tracking-[-0.055em] transition-[border-color,color,box-shadow] duration-500 sm:h-19.5 sm:min-w-43.5 sm:rounded-[20px] sm:px-8 sm:text-[28px] dark:from-[#181818] dark:to-[#0d0d0d]",
             arrowLit
               ? "border-[#993a05] text-white shadow-[0_10px_24px_rgba(24,24,27,.12)] dark:border-[#e06a2c] dark:text-white dark:shadow-[0_10px_24px_rgba(0,0,0,.28)]"
               : "border-black/18 text-zinc-950 shadow-[inset_0_1px_rgba(255,255,255,.9),0_12px_38px_rgba(24,24,27,.14)] dark:border-white/[0.14] dark:text-[#f1f1f1] dark:shadow-[inset_0_1px_rgba(255,255,255,.035),0_10px_30px_rgba(0,0,0,.32)]",
@@ -568,6 +572,7 @@ export function ResearchBentoGrid({
   userLabel = "You",
   collaboratorLabel = "Agent",
   className,
+  style,
   onPausedChange,
   onSelectedBrandChange,
   ...props
@@ -583,38 +588,39 @@ export function ResearchBentoGrid({
 
   return (
     <div
-    style={{
-				backgroundImage:
-					"radial-gradient(color-mix(in srgb, currentColor 12%, transparent) 1px, transparent 1px)",
-				backgroundSize: "18px 18px",
-			}}
       {...props}
+      style={{
+        backgroundImage:
+          "radial-gradient(color-mix(in srgb, currentColor 12%, transparent) 1px, transparent 1px)",
+        backgroundSize: "18px 18px",
+        ...style,
+      }}
       className={cn(
-        "flex h-full w-full flex-col overflow-y-auto  @container sm:p-3",
+        "flex h-full w-full flex-col overflow-y-auto p-3 pb-8 @container sm:p-3 sm:pb-3",
         "dark:bg-[#020202] dark:text-white dark:[--bento-tile-cutout:#171717]",
         className,
       )}
     >
-     <div className="mx-auto mb-10 w-full max-w-3xl px-4 text-center sm:mb-14 my-14">
- <p className="mx-auto mb-5 flex w-fit items-center gap-2 rounded-full border border-border bg-muted/50 px-3 py-1 text-muted-foreground text-xs">
-							<span className="size-1.5 rounded-full bg-orange-500" />
-							Amanises Beyond AI Chat
-						</p>
+      <div className="mx-auto mb-8 mt-10 w-full max-w-3xl px-2 text-center sm:my-14 sm:mb-14 sm:px-4">
+        <p className="mx-auto mb-4 flex w-fit max-w-full items-center gap-2 rounded-full border border-border bg-muted/50 px-3 py-1 text-[11px] text-muted-foreground sm:mb-5 sm:text-xs">
+          <span className="size-1.5 shrink-0 rounded-full bg-orange-500" />
+          Amanises Beyond AI Chat
+        </p>
 
-  <h2 className="text-balance text-4xl font-semibold tracking-[-0.055em] text-zinc-950 sm:text-5xl md:text-6xl dark:text-white">
-    Give Amanises a task.
-    <br />
-    <span className="text-zinc-400 dark:text-zinc-600">
-      Let it do the work.
-    </span>
-  </h2>
+        <h2 className="text-balance text-3xl font-semibold tracking-[-0.055em] text-zinc-950 min-[400px]:text-4xl sm:text-5xl md:text-6xl dark:text-white">
+          Give Amanises a task.
+          <br />
+          <span className="text-zinc-400 dark:text-zinc-600">
+            Let it do the work.
+          </span>
+        </h2>
 
-  <p className="mx-auto mt-5 max-w-2xl text-sm leading-7 text-zinc-600 sm:text-base dark:text-zinc-400">
-    Connect the apps you already use and give your AI agent permission to
-    actually take action. Amanises works across your tools instead of just
-    telling you what to do.
-  </p>
-</div>
+        <p className="mx-auto mt-4 max-w-2xl text-balance text-sm leading-6 text-zinc-600 sm:mt-5 sm:text-base sm:leading-7 dark:text-zinc-400">
+          Connect the apps you already use and give your AI agent permission to
+          actually take action. Amanises works across your tools instead of just
+          telling you what to do.
+        </p>
+      </div>
 
       <div className="m-auto grid w-full max-w-280 grid-cols-1 gap-2.5 sm:gap-3 @min-[840px]:h-[min(100%,656px)] @min-[840px]:grid-cols-12 @min-[840px]:grid-rows-2">
         <DesignsPanel

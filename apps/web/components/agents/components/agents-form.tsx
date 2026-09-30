@@ -31,6 +31,7 @@ import {
 	InputGroupTextarea,
 } from "@/components/ui/input-group";
 import { useCreateAgents } from "../hooks/use-agents-hook";
+import { useRouter } from "next/navigation";
 
 // ── DiceBear helpers ─────────────────────────────────────────────────────────
 
@@ -68,7 +69,7 @@ interface CreateAgentDialogProps {
 export function CreateAgentDialog({ trigger }: CreateAgentDialogProps) {
 	const [open, setOpen] = React.useState(false);
 	const { mutate, isPending } = useCreateAgents();
-
+	const router = useRouter()
 	const [seed, setSeed] = React.useState("default");
 	const [spinning, setSpinning] = React.useState(false);
 
@@ -95,9 +96,10 @@ export function CreateAgentDialog({ trigger }: CreateAgentDialogProps) {
 		},
 		onSubmit: async ({ value }) => {
 			mutate(value, {
-				onSuccess: () => {
+				onSuccess: (data) => {
 					toast.success("Agent created successfully");
 					form.reset();
+					router.push(`/chat/${data.id}`)
 					setOpen(false);
 				},
 			});
