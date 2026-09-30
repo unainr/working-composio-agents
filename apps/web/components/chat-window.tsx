@@ -1,20 +1,41 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useMemo } from "react";
 import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport } from "ai";
-import ReactMarkdown from "react-markdown";
-import remarkGfm from "remark-gfm";
-import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Send, ExternalLink } from "lucide-react";
+import { ExternalLink } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 import type { UIMessage } from "ai";
-import { useAuth } from '@clerk/nextjs';
+import { useAuth } from "@clerk/nextjs";
 
 import GridLoader from "./loader/grid-load";
+
+import {
+	Conversation,
+	ConversationContent,
+	ConversationScrollButton,
+} from "@/components/ai-elements/conversation";
+import {
+	Message,
+	MessageContent,
+	MessageResponse,
+} from "@/components/ai-elements/message";
+import {
+	Tool,
+	ToolHeader,
+	ToolContent,
+	ToolInput,
+	ToolOutput,
+} from "@/components/ai-elements/tool";
+import {
+	PromptInput,
+	PromptInputBody,
+	PromptInputTextarea,
+	PromptInputFooter,
+	PromptInputSubmit,
+} from "@/components/ai-elements/prompt-input";
+
 interface ChatWindowProps {
 	agentId: string;
 	chatId?: string | null;
@@ -24,6 +45,82 @@ interface ChatWindowProps {
 	onConversationFinished?: () => void;
 }
 
+/* ----------------------------- tool part helpers ---------------------------- */
+
+type ToolPart = {
+	type: string;
+	state?: "input-streaming" | "input-available" | "output-available" | "output-error";
+	toolName?: string;
+	toolCallId?: string;
+	input?: unknown;
+	output?: unknown;
+	errorText?: string;
+};
+
+function asToolPart(part: { type: string }): ToolPart | null {
+	if (part.type === "dynamic-tool" || part.type.startsWith("tool-")) {
+		return part as unknown as ToolPart;
+	}
+	return null;
+}
+
+type LinkItem = { label: string; url: string };
+const URL_RE = /https?:\/\/[^\s"'<>\\)]+/g;
+
+function hostOf(url: string) {
+	try {
+		return new URL(url).hostname.replace(/^www\./, "");
+	} catch {
+		return url;
+	}
+}
+
+function labelFor(key: string, url: string) {
+	const k = key
+		.replace(/[_-]?(url|link|href)$/i, "")
+		.replace(/([a-z])([A-Z])/g, "$1 $2")
+		.replace(/[_-]+/g, " ")
+		.trim();
+	if (!k || /^(text|content|data|result)$/i.test(k)) return hostOf(url);
+	return k.charAt(0).toUpperCase() + k.slice(1);
+}
+
+function extractLinks(
+	value: unknown,
+	key = "",
+	out: LinkItem[] = [],
+	depth = 0,
+): LinkItem[] {
+	if (depth > 6 || value == null) return out;
+
+	if (typeof value === "string") {
+		const s = value.trim();
+		if (s.startsWith("{") || s.startsWith("[")) {
+			try {
+				return extractLinks(JSON.parse(s), key, out, depth + 1);
+			} catch {
+				/* not json, fall through */
+			}
+		}
+		for (const m of s.match(URL_RE) ?? []) {
+			const url = m.replace(/[.,;:!?]+$/, "");
+			if (!out.some((l) => l.url === url)) {
+				out.push({ label: labelFor(key, url), url });
+			}
+		}
+		return out;
+	}
+
+	if (Array.isArray(value)) {
+		value.forEach((v) => extractLinks(v, key, out, depth + 1));
+	} else if (typeof value === "object") {
+		for (const [k, v] of Object.entries(value)) extractLinks(v, k, out, depth + 1);
+	}
+	return out;
+}
+
+/* --------------------------------- component -------------------------------- */
+
 export function ChatWindow({
 	agentId,
 	chatId,
@@ -32,9 +129,7 @@ export function ChatWindow({
 	onInsufficientCredits,
 	onConversationFinished,
 }: ChatWindowProps) {
-	const bottomRef = useRef<HTMLDivElement>(null);
-	const inputRef = useRef<HTMLTextAreaElement>(null);
-	  const { getToken } = useAuth();
+	const { getToken } = useAuth();
 
 	const { messages, sendMessage, status, error } = useChat({
 		id: chatId ?? undefined,
@@ -42,9 +137,9 @@ export function ChatWindow({
 		transport: new DefaultChatTransport({
 			api: `${process.env.NEXT_PUBLIC_API_URL}/api/chat`,
 			headers: async () => {
-        const token = await getToken();
-        return { Authorization: `Bearer ${token}` };
-      },
+				const token = await getToken();
+				return { Authorization: `Bearer ${token}` };
+			},
 			body: { agentId, chatId },
 			fetch: async (input, init) => {
 				const response = await fetch(input, init);
@@ -59,71 +154,56 @@ export function ChatWindow({
 			},
 		}),
 		onFinish: () => {
-			// Fires once the assistant's reply has fully streamed in — by this
-			// point the backend's own onFinish has already run and written the
-			// real credit deduction, so it's safe to refetch billing here.
+			// Backend onFinish already wrote the credit deduction by now.
 			onConversationFinished?.();
 		},
 	});
 
 	const isStreaming = status === "submitted" || status === "streaming";
 	const lastMessage = messages.at(-1);
-	const lastMessageHasText = lastMessage?.parts?.some(
-		(p) => p.type === "text" && p.text?.length,
-	);
+
+	// text OR a tool card counts as "something visible" (so tool cards show while running)
+	const hasVisibleContent = (m?: UIMessage) =>
+		!!m?.parts?.some(
+			(p) => (p.type === "text" && !!p.text?.length) || asToolPart(p) !== null,
+		);
 
 	const isThinking =
 		status === "submitted" ||
 		(status === "streaming" &&
 			lastMessage?.role === "assistant" &&
-			!lastMessageHasText);
+			!hasVisibleContent(lastMessage));
 
-	useEffect(() => {
-		bottomRef.current?.scrollIntoView({ behavior: "smooth" });
-	}, [messages, isThinking]);
-
-	function handleSend() {
-		const text = inputRef.current?.value.trim();
-		if (!text || isStreaming) return;
-		sendMessage({ text });
-		if (inputRef.current) inputRef.current.value = "";
-	}
-
-	function handleKeyDown(e: React.KeyboardEvent<HTMLTextAreaElement>) {
-		if (e.key === "Enter" && !e.shiftKey) {
-			e.preventDefault();
-			handleSend();
-		}
+	function handleSend(text: string) {
+		const t = text.trim();
+		if (!t || isStreaming) return;
+		sendMessage({ text: t });
 	}
 
 	return (
-		<div className="flex flex-col h-full min-h-0">
+		<div className="flex flex-col h-full min-h-0 min-w-0">
 			{/* Messages */}
-			<ScrollArea className="flex-1 min-h-0 px-4 py-6">
-				<div className="space-y-4">
+			<Conversation className="flex-1 min-h-0 thin-scrollbar">
+				<ConversationContent className="gap-4 px-4 py-6">
 					{messages.length === 0 && !isThinking && <EmptyState />}
 
 					{messages.map((message, index) => {
 						const isLast = index === messages.length - 1;
-						const hasText = message.parts?.some(
-							(p) => p.type === "text" && p.text?.length,
-						);
 
 						if (
 							isLast &&
 							message.role === "assistant" &&
-							!hasText &&
+							!hasVisibleContent(message) &&
 							isThinking
 						) {
 							return null;
 						}
 
 						return (
-							<MessageBubble
+							<MessageRow
 								key={message.id}
 								role={message.role}
 								parts={message.parts}
-								isStreaming={isStreaming && isLast}
 							/>
 						);
 					})}
@@ -135,41 +215,23 @@ export function ChatWindow({
 							Something went wrong. Please try again.
 						</p>
 					)}
-
-					<div ref={bottomRef} />
-				</div>
-			</ScrollArea>
+				</ConversationContent>
+				<ConversationScrollButton />
+			</Conversation>
 
 			{/* Input bar */}
 			<div className="shrink-0 border-t border-border/50 px-3 py-3">
-				<div
-					className={cn(
-						"flex items-end gap-2 rounded-xl border border-border/60 bg-muted/40 px-3 py-2",
-						"focus-within:border-primary/50 focus-within:bg-background transition-colors duration-150",
-					)}
-				>
-					<Textarea
-						ref={inputRef}
-						rows={1}
-						onKeyDown={handleKeyDown}
-						disabled={isStreaming}
-						placeholder="Ask the agent to do something…"
-						className={cn(
-							"flex-1 resize-none border-0 bg-transparent p-0 shadow-none",
-							"focus-visible:ring-0 focus-visible:ring-offset-0",
-							"text-sm leading-relaxed placeholder:text-muted-foreground/50",
-							"min-h-5.5",
-						)}
-					/>
-					<Button
-						onClick={handleSend}
-						disabled={isStreaming}
-						size="icon"
-						className="h-7 w-7 shrink-0 rounded-lg"
-					>
-						<Send className="h-3.5 w-3.5" />
-					</Button>
-				</div>
+				<PromptInput onSubmit={({ text }) => handleSend(text)}>
+					<PromptInputBody>
+						<PromptInputTextarea
+							disabled={isStreaming}
+							placeholder="Ask the agent to do something…"
+						/>
+					</PromptInputBody>
+					<PromptInputFooter className="justify-end">
+						<PromptInputSubmit status={status} disabled={isStreaming} />
+					</PromptInputFooter>
+				</PromptInput>
 				<p className="mt-1.5 text-[11px] text-muted-foreground/40 text-center">
 					Enter to send · Shift+Enter for new line
 				</p>
@@ -178,140 +240,123 @@ export function ChatWindow({
 	);
 }
 
-function MessageBubble({
+/* ------------------------------ message rendering ---------------------------- */
+
+function MessageRow({
 	role,
 	parts,
-	isStreaming,
 }: {
 	role: "user" | "assistant" | "system";
-	parts: { type: string; text?: string }[];
-	isStreaming: boolean;
+	parts: UIMessage["parts"];
 }) {
-	const isUser = role === "user";
-	const text = parts
-		.filter((p) => p.type === "text")
-		.map((p) => p.text)
-		.join("");
+	// keep the original order: text, tool card, text...
+	const visible = parts.filter(
+		(p) => (p.type === "text" && !!p.text?.length) || asToolPart(p) !== null,
+	);
 
 	return (
-		<div className={cn("flex", isUser ? "justify-end" : "justify-start")}>
-			<div
-				className={cn(
-					"max-w-[80%] rounded-2xl px-4 py-2.5 text-sm leading-relaxed",
-					isUser
-						? "bg-primary text-primary-foreground rounded-tr-sm whitespace-pre-wrap"
-						: "bg-muted text-foreground rounded-tl-sm",
-				)}
-			>
-				{isUser ? text : <MarkdownContent content={text} />}
-				{isStreaming && text && <Cursor />}
-			</div>
-		</div>
+		<Message from={role} className="min-w-0">
+			<MessageContent className="min-w-0 wrap-anywhere">
+				{visible.map((part, i) => {
+					const tool = asToolPart(part);
+
+					if (tool) {
+						return (
+							<ToolBlock
+								key={tool.toolCallId ?? `${tool.type}-${i}`}
+								part={tool}
+							/>
+						);
+					}
+
+					if (part.type === "text") {
+						return (
+							<MessageResponse key={i} className="wrap-anywhere">
+								{part.text}
+							</MessageResponse>
+						);
+					}
+					return null;
+				})}
+			</MessageContent>
+		</Message>
 	);
 }
 
-function MarkdownContent({ content }: { content: string }) {
+/* --------------------------------- tool card --------------------------------- */
+
+function ToolBlock({ part }: { part: ToolPart }) {
+	const done = part.state === "output-available";
+
+	const links = useMemo(
+		() => (done ? extractLinks(part.output) : []),
+		[done, part.output],
+	);
+
+	// ToolHeader for dynamic tools needs toolName; static tools read it from `type`
+	const headerProps =
+		part.type === "dynamic-tool"
+			? ({ type: "dynamic-tool", toolName: part.toolName ?? "tool" } as const)
+			: ({ type: part.type } as const);
+
 	return (
-		<div className="space-y-2 [&>*:first-child]:mt-0 [&>*:last-child]:mb-0">
-			<ReactMarkdown
-				remarkPlugins={[remarkGfm]}
-				components={{
-					p: ({ children }) => <p className="leading-relaxed">{children}</p>,
-					strong: ({ children }) => (
-						<strong className="font-semibold text-foreground">
-							{children}
-						</strong>
-					),
-					em: ({ children }) => <em className="italic">{children}</em>,
-					h1: ({ children }) => (
-						<h1 className="text-base font-semibold mt-3 mb-1">{children}</h1>
-					),
-					h2: ({ children }) => (
-						<h2 className="text-sm font-semibold mt-3 mb-1">{children}</h2>
-					),
-					h3: ({ children }) => (
-						<h3 className="text-sm font-semibold mt-3 mb-1">{children}</h3>
-					),
-					ul: ({ children }) => (
-						<ul className="list-disc pl-5 space-y-1">{children}</ul>
-					),
-					ol: ({ children }) => (
-						<ol className="list-decimal pl-5 space-y-1">{children}</ol>
-					),
-					li: ({ children }) => <li className="leading-relaxed">{children}</li>,
-					a: ({ href, children }) => (
+		<div className="w-full min-w-0 space-y-2">
+			<Tool>
+				<ToolHeader
+					{...(headerProps as any)}
+					state={part.state ?? "input-streaming"}
+				/>
+				<ToolContent>
+					{part.input !== undefined && <ToolInput input={part.input as any} />}
+					<ToolOutput
+						output={part.output as any}
+						errorText={part.errorText}
+					/>
+				</ToolContent>
+			</Tool>
+
+			{/* link buttons stay visible even when the tool card is collapsed */}
+			{links.length > 0 && (
+				<div className="flex flex-wrap gap-2">
+					{links.map((l) => (
 						<a
-							href={href}
+							key={l.url}
+							href={l.url}
 							target="_blank"
 							rel="noopener noreferrer"
-							className="inline-flex items-center gap-1 text-primary underline underline-offset-2 hover:opacity-80"
+							className={cn(
+								"inline-flex max-w-full items-center gap-1.5 rounded-lg border border-border/60",
+								"bg-background px-2.5 py-1.5 text-xs font-medium transition-colors hover:bg-accent",
+							)}
 						>
-							{children}
 							<ExternalLink className="h-3 w-3 shrink-0" />
+							<span className="truncate">{l.label}</span>
+							<span className="hidden truncate text-muted-foreground sm:inline">
+								{hostOf(l.url)}
+							</span>
 						</a>
-					),
-					code: ({ children, className }) => {
-						const isBlock = className?.includes("language-");
-						return isBlock ? (
-							<code className="block bg-background/60 rounded-md p-3 text-xs overflow-x-auto font-mono">
-								{children}
-							</code>
-						) : (
-							<code className="bg-background/60 rounded px-1 py-0.5 text-xs font-mono">
-								{children}
-							</code>
-						);
-					},
-					pre: ({ children }) => <pre className="my-2">{children}</pre>,
-					blockquote: ({ children }) => (
-						<blockquote className="border-l-2 border-border pl-3 italic text-muted-foreground">
-							{children}
-						</blockquote>
-					),
-					hr: () => <hr className="border-border my-3" />,
-					table: ({ children }) => (
-						<div className="overflow-x-auto">
-							<table className="text-xs border-collapse">{children}</table>
-						</div>
-					),
-					th: ({ children }) => (
-						<th className="border border-border px-2 py-1 text-left font-semibold">
-							{children}
-						</th>
-					),
-					td: ({ children }) => (
-						<td className="border border-border px-2 py-1">{children}</td>
-					),
-				}}
-			>
-				{content}
-			</ReactMarkdown>
+					))}
+				</div>
+			)}
 		</div>
 	);
 }
+
+/* ---------------------------------- misc ui ---------------------------------- */
 
 function ThinkingIndicator() {
 	return (
 		<div className="flex items-center gap-2.5 rounded-full px-4 py-2">
-          <GridLoader
-            blur={1}
-            color="white"
-            gap={1}
-            mode="stagger"
-            pattern="frame"
-            size="sm"
-          />
-          <span className="font-medium text-sm ">Thinking</span>
-        </div>
-
-	);
-}
-
-
-
-function Cursor() {
-	return (
-		<span className="inline-block w-1.5 h-4 bg-current rounded-sm animate-pulse ml-0.5 align-middle" />
+			<GridLoader
+				blur={1}
+				color="white"
+				gap={1}
+				mode="stagger"
+				pattern="frame"
+				size="sm"
+			/>
+			<span className="font-medium text-sm">Thinking</span>
+		</div>
 	);
 }
 

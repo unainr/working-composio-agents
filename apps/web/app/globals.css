@@ -131,3 +131,26 @@
     @apply font-sans;
   }
 }
+
+
+.thin-scrollbar,
+.thin-scrollbar * {
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
+}
+
+/* Safari / older browsers */
+.thin-scrollbar *::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+.thin-scrollbar *::-webkit-scrollbar-track {
+  background: transparent;
+}
+.thin-scrollbar *::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 9999px;
+}
+.thin-scrollbar *::-webkit-scrollbar-thumb:hover {
+  background: var(--muted-foreground);
+}
