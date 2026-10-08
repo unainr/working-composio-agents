@@ -68,10 +68,7 @@ export function MainHeader() {
 
           <div className="mx-1 hidden h-6 w-px bg-border/70 sm:block" />
 
-          {/* Credits */}
-          <div className="hidden items-center justify-center sm:flex">
-            <CreditsDisplay />
-          </div>
+        
 
           {/* Theme switcher */}
           <div className="flex items-center justify-center">
