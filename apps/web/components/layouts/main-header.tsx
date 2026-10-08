@@ -66,7 +66,7 @@ export function MainHeader() {
             })}
           </ul> */}
 
-          <div className="mx-1 hidden h-6 w-px bg-border/70 sm:block" />
+        
 
         
 
