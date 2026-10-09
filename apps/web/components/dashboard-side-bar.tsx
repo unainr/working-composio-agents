@@ -15,19 +15,9 @@ import {
   SidebarRail,
   useSidebar,
 } from "@/components/ui/sidebar";
-import {
-    ArrowLeft,
-  Bot,
-  CreditCard,
-  Home,
-  Settings,
-  Sparkles,
-  Zap,
-} from "lucide-react";
+import { ArrowLeft, Bot, CreditCard } from "lucide-react";
 import { SignInButtonClerk } from "@/components/clerk-sign-button/Sign-in-button";
 import { ThemeSwitcher } from "@/components/theme/mode-toggle";
-import { useBilling } from "@/hooks/use-billing";
-import { cn } from "@/lib/utils";
 import Logo from "./layouts/logo";
 
 const navItems = [
@@ -38,20 +28,22 @@ const navItems = [
 
 export function DashboardSidebar() {
   const pathname = usePathname();
-  const { data: billing } = useBilling();
   const { state } = useSidebar();
   const isCollapsed = state === "collapsed";
 
-  const creditsLow = billing && billing.credits <= 20;
-  const creditsEmpty = billing && billing.credits <= 0;
+  // "/" should never look active inside the dashboard;
+  // other routes stay active on nested paths (e.g. /agent/123)
+  const isActive = (href: string) =>
+    href === "/" ? false : pathname === href || pathname.startsWith(`${href}/`);
 
   return (
-    <Sidebar collapsible="icon"className="h-full">
+    <Sidebar collapsible="icon" className="h-full">
       {/* Header */}
-      <SidebarHeader className="h-14 justify-center border-b px-3">
-       <Logo/>
+      <SidebarHeader className="h-14 justify-center overflow-hidden border-b px-3">
+        <Logo />
       </SidebarHeader>
 
+      {/* Nav */}
       <SidebarContent>
         <SidebarGroup>
           <SidebarGroupContent>
@@ -60,11 +52,11 @@ export function DashboardSidebar() {
                 <SidebarMenuItem key={item.href}>
                   <SidebarMenuButton
                     asChild
-                    isActive={pathname === item.href}
+                    isActive={isActive(item.href)}
                     tooltip={item.label}
                   >
                     <Link href={item.href}>
-                      <item.icon className="h-4 w-4" />
+                      <item.icon className="size-4" />
                       <span>{item.label}</span>
                     </Link>
                   </SidebarMenuButton>
@@ -75,43 +67,15 @@ export function DashboardSidebar() {
         </SidebarGroup>
       </SidebarContent>
 
-      <SidebarFooter className="border-t p-3 gap-2">
-        {/* Credits pill */}
-        {billing && (
-          <Link href="/pricing">
-            <div className={cn(
-              "flex items-center justify-between rounded-lg border px-3 py-2 text-xs transition-colors hover:bg-muted/50",
-              isCollapsed && "justify-center px-2",
-              creditsEmpty ? "border-destructive/40 bg-destructive/5" :
-              creditsLow ? "border-amber-500/40 bg-amber-500/5" :
-              "border-border bg-muted/30"
-            )}>
-              <Zap className={cn(
-                "size-3.5 shrink-0",
-                creditsEmpty ? "text-destructive" :
-                creditsLow ? "text-amber-500" : "text-primary"
-              )} />
-              {!isCollapsed && (
-                <>
-                  <span className="text-muted-foreground ml-2 flex-1">Credits</span>
-                  <span className={cn(
-                    "font-semibold tabular-nums",
-                    creditsEmpty ? "text-destructive" :
-                    creditsLow ? "text-amber-500" : "text-foreground"
-                  )}>
-                    {billing.credits}
-                  </span>
-                </>
-              )}
-            </div>
-          </Link>
-        )}
-
-       
+      {/* Footer */}
+      <SidebarFooter className="gap-2 overflow-hidden border-t p-3">
+        <SignInButtonClerk variant="sidebar" collapsed={isCollapsed} />
 
         {!isCollapsed && (
-          <div className="flex items-center justify-between gap-2 rounded-lg border bg-background/40 px-2 py-1.5">
-            <SignInButtonClerk />
+          <div className="flex items-center justify-between gap-2 rounded-xl px-2 py-1">
+            <span className="text-xs font-medium text-muted-foreground">
+              Theme
+            </span>
             <ThemeSwitcher />
           </div>
         )}
