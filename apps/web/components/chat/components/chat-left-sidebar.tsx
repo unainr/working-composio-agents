@@ -15,6 +15,7 @@ import {
   SidebarMenuItem,
   SidebarMenuButton,
   SidebarSeparator,
+  useSidebar,
 } from "@/components/ui/sidebar";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { ChatHistoryList } from "@/components/ChatHistoryList";
@@ -39,9 +40,9 @@ export function ChatLeftSidebar({
  
 }: Props) {
   const { data: billing } = useBilling();
-  const creditsLow = billing && billing.credits <= 20;
-  const creditsEmpty = billing && billing.credits <= 0;
 
+const { state } = useSidebar();
+  const isCollapsed = state === "collapsed";
   return (
     <Sidebar collapsible="offcanvas" className="border-r">
       {/* Header */}
@@ -125,69 +126,17 @@ export function ChatLeftSidebar({
       </SidebarContent>
 
       {/* Footer */}
-      <SidebarFooter className="gap-2 border-t p-3">
-        {/* Credits display */}
-        {billing && (
-          <Link href="/dashboard/pricing">
-            <div
-              className={cn(
-                "flex items-center justify-between rounded-lg border px-3 py-2 text-xs transition-colors hover:bg-muted/50 cursor-pointer",
-                creditsEmpty
-                  ? "border-destructive/40 bg-destructive/5"
-                  : creditsLow
-                  ? "border-amber-500/40 bg-amber-500/5"
-                  : "border-border bg-muted/30"
-              )}
-            >
-              <div className="flex items-center gap-2">
-                <Sparkles
-                  className={cn(
-                    "size-3.5",
-                    creditsEmpty
-                      ? "text-destructive"
-                      : creditsLow
-                      ? "text-amber-500"
-                      : "text-primary"
-                  )}
-                />
-                <span className="text-muted-foreground">Credits</span>
-              </div>
-              <span
-                className={cn(
-                  "font-semibold tabular-nums",
-                  creditsEmpty
-                    ? "text-destructive"
-                    : creditsLow
-                    ? "text-amber-500"
-                    : "text-foreground"
-                )}
-              >
-                {billing.credits}
-              </span>
-            </div>
-          </Link>
+     <SidebarFooter className="gap-2 overflow-hidden border-t p-3">
+        <SignInButtonClerk variant="sidebar" collapsed={isCollapsed} />
+
+        {!isCollapsed && (
+          <div className="flex items-center justify-between gap-2 rounded-xl px-2 py-1">
+            <span className="text-xs font-medium text-muted-foreground">
+              Theme
+            </span>
+            <ThemeSwitcher />
+          </div>
         )}
-
-        {/* Settings */}
-        <SidebarMenu>
-          <SidebarMenuItem>
-            <SidebarMenuButton
-              asChild
-              className="text-muted-foreground hover:text-foreground"
-            >
-              <Link href="/dashboard/settings">
-                <Settings className="size-4" />
-                <span>Settings</span>
-              </Link>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-        </SidebarMenu>
-
-        {/* Account + theme */}
-        <div className="flex items-center justify-between gap-2 rounded-lg border bg-background/40 px-2 py-1.5">
-          <SignInButtonClerk />
-          <ThemeSwitcher />
-        </div>
       </SidebarFooter>
     </Sidebar>
   );

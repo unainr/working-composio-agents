@@ -22,7 +22,7 @@ export async function getOrCreateSession(userId: string,env:Bindings) {
 
    if (existing.length > 0) {
     const session = await composio.use(existing[0].sessionId);
-    await session.update(sessionConfig);
+    // await session.update(sessionConfig);
     return session;
   }
   // First time for this user: create and store

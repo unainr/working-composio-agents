@@ -9,16 +9,24 @@ type Db = ReturnType<typeof getDb>;
 export async function getOrCreateCredits(env: CloudflareBindings, userId: string) {
   const db = getDb(env);
 
-  await db
-    .insert(userCredits)
-    .values({ userId, credits: 40 }) // ← no plan
-    .onConflictDoNothing();
+  const [existing] = await db
+    .select()
+    .from(userCredits)
+    .where(eq(userCredits.userId, userId));
+  if (existing) return existing; // usual case: 1 call
 
+  const [created] = await db
+    .insert(userCredits)
+    .values({ userId, credits: 40 })
+    .onConflictDoNothing()
+    .returning();
+  if (created) return created;
+
+  // another request created it at the same moment
   const [row] = await db
     .select()
     .from(userCredits)
     .where(eq(userCredits.userId, userId));
-
   return row;
 }
 
@@ -64,7 +72,7 @@ export async function deductCreditsClamped(
     .where(eq(userCredits.userId, userId))
     .returning();
 
-  await db.insert(creditTransactions).values({
+   await db.insert(creditTransactions).values({
     userId,
     type: "usage",
     amount: -amount,
@@ -82,7 +90,7 @@ export async function hasMinimumCredits(env: CloudflareBindings, userId: string,
 // billing.ts
 export async function canCreateAgent(env: CloudflareBindings, userId: string) {
   const db = getDb(env);
-  const row = await getOrCreateCredits(env, userId);
+
 
   const userAgents = await db
     .select({ id: agents.id })
