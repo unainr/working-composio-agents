@@ -87,7 +87,7 @@ const app = new Hono<{ Bindings: CloudflareBindings }>()
 		const tools = await session.tools();
 
 		const result = streamText({
-			model: google("gemini-3.8-flash"),
+			model: google("gemini-3.5-flash"),
 			system: buildSystemPrompt(agentContext),
 			tools,
 			messages: await convertToModelMessages(uiMessages),
