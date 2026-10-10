@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import type { ComponentProps } from "react";
-import { PanelRight, PanelRightClose } from "lucide-react";
+import { PanelRightClose } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 
 import { SidebarInset, SidebarTrigger } from "@/components/ui/sidebar";
@@ -12,7 +12,6 @@ import { Spinner } from "@/components/ui/spinner";
 import { ChatWindow } from "@/components/chat-window";
 import { UpgradeDialog } from "@/components/upgrade-dialog";
 import { useChatMessages, useInvalidateChats } from "@/hooks/use-chat";
-import { useIsMobile } from "@/hooks/use-mobile";
 import { billingKey } from "@/hooks/use-billing";
 import { ChatLeftSidebar } from "../components/chat-left-sidebar";
 import { ChatRightSidebar } from "../components/chat-right-sidebar";
@@ -24,12 +23,29 @@ interface Props {
 }
 
 export const ChatView = ({ id, agentName = "Agent" }: Props) => {
+	// Chat the user OPENED from the sidebar (null = new chat). Only this loads history.
 	const [activeChatId, setActiveChatId] = useState<string | null>(null);
+
+	// Chat that the backend CREATED while the user is typing in the current window.
+	// Used only to highlight it in the sidebar. It must NOT remount the window.
+	const [liveChatId, setLiveChatId] = useState<string | null>(null);
+
+	// Changes ONLY when the user clicks "New chat" or opens a chat from the sidebar.
+	const [windowKey, setWindowKey] = useState(() => crypto.randomUUID());
+
 	const [showUpgrade, setShowUpgrade] = useState(false);
 	const rightPanel = useRightPanel();
 
 	const queryClient = useQueryClient();
 	const invalidateChats = useInvalidateChats();
+
+	const currentChatId = activeChatId ?? liveChatId;
+
+	function openChat(chatId: string | null) {
+		setActiveChatId(chatId);
+		setLiveChatId(null);
+		setWindowKey(crypto.randomUUID());
+	}
 
 	const { data: history, isLoading: historyLoading } =
 		useChatMessages(activeChatId);
@@ -43,9 +59,8 @@ export const ChatView = ({ id, agentName = "Agent" }: Props) => {
 			<ChatLeftSidebar
 				agentId={id}
 				agentName={agentName}
-				activeChatId={activeChatId}
-				onSelectChat={setActiveChatId}
-				
+				activeChatId={currentChatId}
+				onSelectChat={openChat}
 			/>
 
 			<SidebarInset className="min-h-0 min-w-0 overflow-hidden">
@@ -57,7 +72,7 @@ export const ChatView = ({ id, agentName = "Agent" }: Props) => {
 						className="mr-1 data-[orientation=vertical]:h-4"
 					/>
 					<span className="truncate text-sm font-medium text-muted-foreground">
-						{activeChatId ? "Chat" : "New chat"}
+						{currentChatId ? "Chat" : "New chat"}
 					</span>
 
 					<Button
@@ -75,13 +90,13 @@ export const ChatView = ({ id, agentName = "Agent" }: Props) => {
 					<div className="mx-auto flex h-full w-full max-w-6xl flex-col px-3 sm:px-4">
 						{readyToRenderChat ? (
 							<ChatWindow
-								key={activeChatId ?? "new"}
+								key={windowKey}
 								agentId={id}
 								chatId={activeChatId}
 								initialMessages={initialMessages}
 								onChatCreated={(newId) => {
-									setActiveChatId(newId);
-									invalidateChats(id);
+									setLiveChatId(newId); // highlight in sidebar, no remount
+									invalidateChats(id); // new chat appears in the sidebar list
 								}}
 								onConversationFinished={async () => {
 									await queryClient.invalidateQueries({ queryKey: billingKey });

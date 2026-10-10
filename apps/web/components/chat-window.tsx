@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useRef, useState } from "react";
 import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport } from "ai";
 import { ExternalLink } from "lucide-react";
@@ -130,35 +130,31 @@ export function ChatWindow({
 	onConversationFinished,
 }: ChatWindowProps) {
 	const { getToken } = useAuth();
-
+const [stableId] = useState(() => chatId ?? crypto.randomUUID());
+const chatIdRef = useRef<string | null>(chatId ?? null);
 	const { messages, sendMessage, status, error } = useChat({
-		id: chatId ?? undefined,
-		messages: initialMessages,
-		transport: new DefaultChatTransport({
-			api: `${process.env.NEXT_PUBLIC_API_URL}/api/chat`,
-			headers: async () => {
-				const token = await getToken();
-				return { Authorization: `Bearer ${token}` };
-			},
-			body: { agentId, chatId },
-			fetch: async (input, init) => {
-				const response = await fetch(input, init);
-				if (response.status === 402) {
-					onInsufficientCredits?.();
-				}
-				const newChatId = response.headers.get("X-Chat-Id");
-				if (newChatId && newChatId !== chatId) {
-					onChatCreated?.(newChatId);
-				}
-				return response;
-			},
-		}),
-		onFinish: () => {
-			// Backend onFinish already wrote the credit deduction by now.
-			onConversationFinished?.();
+	id: stableId,
+	messages: initialMessages,
+	transport: new DefaultChatTransport({
+		api: `${process.env.NEXT_PUBLIC_API_URL}/api/chat`,
+		headers: async () => {
+			const token = await getToken();
+			return { Authorization: `Bearer ${token}` };
 		},
-	});
-
+		body: () => ({ agentId, chatId: chatIdRef.current }),
+		fetch: async (input, init) => {
+			const response = await fetch(input, init);
+			if (response.status === 402) onInsufficientCredits?.();
+			const newChatId = response.headers.get("X-Chat-Id");
+			if (newChatId && newChatId !== chatIdRef.current) {
+				chatIdRef.current = newChatId;
+				onChatCreated?.(newChatId);
+			}
+			return response;
+		},
+	}),
+	onFinish: () => onConversationFinished?.(),
+});
 	const isStreaming = status === "submitted" || status === "streaming";
 	const lastMessage = messages.at(-1);
 

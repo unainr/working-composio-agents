@@ -18,6 +18,7 @@ const app = new Hono<{ Bindings: CloudflareBindings }>()
 		return cors({
 			origin: c.env.WEB_URL,
 			credentials: true,
+			exposeHeaders: ["X-Chat-Id"],
 		})(c, next);
 	})
 	.use("*", async (c, next) => {
