@@ -27,7 +27,7 @@ const app = new Hono<{ Bindings: CloudflareBindings }>()
 		const body = await c.req.json<ChatRequest>();
 		const uiMessages = body.messages ?? [];
 		const agentId = body.agentId;
-		const isNewChat = !body.chatId;
+
 
 		let session;
 		try {
@@ -91,7 +91,7 @@ const app = new Hono<{ Bindings: CloudflareBindings }>()
 			system: buildSystemPrompt(agentContext),
 			tools,
 			messages: await convertToModelMessages(uiMessages),
-			stopWhen: stepCountIs(15),
+			stopWhen: stepCountIs(5),
 			onError: (error) => {
 				console.error("[chat] streamText error:", error);
 			},
@@ -101,8 +101,11 @@ const app = new Hono<{ Bindings: CloudflareBindings }>()
 						(m) => m.role === "assistant",
 					);
 
-					for (const msg of assistantMessages) {
-						const parts =
+					// One insert for ALL assistant messages (1 subrequest instead of N)
+					const rows = assistantMessages.map((msg) => ({
+						chatId,
+						role: "assistant" as const,
+						parts:
 							typeof msg.content === "string"
 								? [{ type: "text", text: msg.content }]
 								: msg.content.map((part) => {
@@ -110,15 +113,13 @@ const app = new Hono<{ Bindings: CloudflareBindings }>()
 											return { type: "text", text: part.text };
 										}
 										return part;
-									});
-
-						await db.insert(chatMessages).values({
-							chatId,
-							role: "assistant",
-							parts,
-						});
+									}),
+					}));
+ 
+					if (rows.length > 0) {
+						await db.insert(chatMessages).values(rows);
 					}
-
+ 
 					await db
 						.update(chats)
 						.set({ updatedAt: new Date() })
