@@ -34,7 +34,9 @@ import {
 	PromptInputTextarea,
 	PromptInputFooter,
 	PromptInputSubmit,
+	PromptInputProvider,
 } from "@/components/ai-elements/prompt-input";
+import { VoiceButton } from "./voice-button";
 
 interface ChatWindowProps {
 	agentId: string;
@@ -132,6 +134,7 @@ export function ChatWindow({
 	const { getToken } = useAuth();
 const [stableId] = useState(() => chatId ?? crypto.randomUUID());
 const chatIdRef = useRef<string | null>(chatId ?? null);
+const textareaRef = useRef<HTMLTextAreaElement>(null);
 	const { messages, sendMessage, status, error } = useChat({
 	id: stableId,
 	messages: initialMessages,
@@ -217,6 +220,7 @@ const chatIdRef = useRef<string | null>(chatId ?? null);
 
 			{/* Input bar */}
 			<div className="shrink-0 border-t border-border/50 px-3 py-3">
+			<PromptInputProvider>
 				<PromptInput onSubmit={({ text }) => handleSend(text)}>
 					<PromptInputBody>
 						<PromptInputTextarea
@@ -225,9 +229,11 @@ const chatIdRef = useRef<string | null>(chatId ?? null);
 						/>
 					</PromptInputBody>
 					<PromptInputFooter className="justify-end">
+					<VoiceButton disabled={isStreaming} />
 						<PromptInputSubmit status={status} disabled={isStreaming} />
 					</PromptInputFooter>
 				</PromptInput>
+				</PromptInputProvider>
 				<p className="mt-1.5 text-[11px] text-muted-foreground/40 text-center">
 					Enter to send · Shift+Enter for new line
 				</p>
