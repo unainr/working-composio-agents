@@ -135,7 +135,7 @@ export function ChatWindow({
 const [stableId] = useState(() => chatId ?? crypto.randomUUID());
 const chatIdRef = useRef<string | null>(chatId ?? null);
 const textareaRef = useRef<HTMLTextAreaElement>(null);
-	const { messages, sendMessage, status, error } = useChat({
+	const { messages, sendMessage, status, error,stop } = useChat({
 	id: stableId,
 	messages: initialMessages,
 	transport: new DefaultChatTransport({
@@ -230,7 +230,7 @@ const textareaRef = useRef<HTMLTextAreaElement>(null);
 					</PromptInputBody>
 					<PromptInputFooter className="justify-end">
 					<VoiceButton disabled={isStreaming} />
-						<PromptInputSubmit status={status} disabled={isStreaming} />
+						<PromptInputSubmit status={status}  onStop={stop} />
 					</PromptInputFooter>
 				</PromptInput>
 				</PromptInputProvider>
